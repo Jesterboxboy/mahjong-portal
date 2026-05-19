@@ -379,7 +379,7 @@ class TournamentHandler:
 
         game_info = response.game
         pantheon_url = (
-            f"https://rating.riichimahjong.org/event/{self.tournament.new_pantheon_id}"
+            f"{settings.PANTHEON_FRONTEND_URL}/event/{self.tournament.new_pantheon_id}"
             f"/game/{game_info.session_hash}"
         )
 
@@ -1554,10 +1554,10 @@ class TournamentHandler:
                 return f"{current_lobby}"
 
     def get_rating_link(self):
-        return f"https://rating.riichimahjong.org/event/{self.tournament.new_pantheon_id}/order/rating"
+        return f"{settings.PANTHEON_FRONTEND_URL}/event/{self.tournament.new_pantheon_id}/order/rating"
 
     def get_pantheon_game_link(self, hash):
-        return f"https://rating.riichimahjong.org/event/{self.tournament.new_pantheon_id}/game/{hash}"
+        return f"{settings.PANTHEON_FRONTEND_URL}/event/{self.tournament.new_pantheon_id}/game/{hash}"
 
     def get_admin_username(self):
         if self.destination == self.TELEGRAM_DESTINATION:

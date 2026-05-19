@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}
+    {% trans 'About' %}
+{% endblock %}
+
+{% block meta_tags %}
+    <meta name="description" content="Riichi-Mahjong-Portal – Informationen über die Ranglisten.">
+    <meta property="og:description" content="Riichi-Mahjong-Portal – Informationen über die Ranglisten.">
+{% endblock %}
+
+{% block content %}
+    <div>
+        <p>Wir pflegen folgende Ranglisten:</p>
+        <ol>
+            <li><a href="#rr">Interne Rangliste (RR)</a></li>
+            <li><a href="#ema">EMA-Rangliste</a></li>
+            <li><a href="#online">Online-Rangliste</a></li>
+        </ol>
+
+        <h1 id="rr">Interne Rangliste (RR)</h1>
+        <p>Die interne Rangliste erfasst alle akkreditierten Riichi-Mahjong-Turniere der letzten zwei Jahre.</p>
+
+        <h2>Berechnungsformel</h2>
+        <p>Die Berechnung der RR-Rangliste basiert auf der EMA-2018-Formel mit einigen Anpassungen.</p>
+        <p>Die Berechnung besteht aus zwei Teilen.</p>
+
+        <h3>Erster Teil</h3>
+        <p>Formel für den ersten Teil:</p>
+        <p><code>A = (W1*R1*A1 + …) / (W1*A1 + …)</code></p>
+        <p>Dabei ist W = Turniergewicht, R = Basisrang des Spielers, A = Veralterungskoeffizient des Turniers.</p>
+
+        <h3>Zweiter Teil</h3>
+        <p>Der zweite Teil ergibt sich aus den vier besten Turnierergebnissen des Spielers in den letzten zwei Jahren:</p>
+        <p><code>B = (W1*R1*A1 + W2*R2*A2 + W3*R3*A3 + W4*R4*A4) / [MAXK1 + MAXK2 + MAXK3 + MAXK4]</code></p>
+
+        <h3>Endergebnis</h3>
+        <p><code>Rangliste = A * 0.5 + B * 0.5</code></p>
+
+        <h2>Anforderungen an Turnierspieler</h2>
+        <p>Die Rangliste enthält Spieler mit zwei oder mehr Turnieren.</p>
+
+        <h2>Basisrang des Spielers</h2>
+        <p>Der Basisrang liegt immer zwischen 0 und 1000 und wird wie folgt berechnet:</p>
+        <ol>
+            <li>Anzahl der Teilnehmer minus den Endplatz des Spielers</li>
+            <li>Geteilt durch (Anzahl der Spieler − 1)</li>
+            <li>Multipliziert mit 1000</li>
+        </ol>
+        <p>Beispiel: In einem Turnier mit 100 Teilnehmern belegt ein Spieler Platz 25:</p>
+        <p><code>Basisrang = ((100 - 25) / (100 - 1)) * 1000 = 757</code></p>
+
+        <h1 id="ema">EMA-Rangliste</h1>
+        <p>Die EMA-Rangliste basiert auf der offiziellen EMA-Bewertungsformel und erfasst EMA-akkreditierte Turniere.</p>
+
+        <h1 id="online">Online-Rangliste</h1>
+        <p>Die Online-Rangliste erfasst Online-Turnierergebnisse.</p>
+    </div>
+{% endblock %}

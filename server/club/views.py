@@ -12,8 +12,8 @@ def club_list(request):
     clubs = Club.objects.all().order_by("city__name").prefetch_related("city")
 
     map_language = "en_US"
-    if get_language() == "ru":
-        map_language = "ru_RU"
+    if get_language() == "de":
+        map_language = "de_DE"
 
     return render(request, "club/list.html", {"clubs": clubs, "map_language": map_language, "page": "club"})
 

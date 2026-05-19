@@ -94,16 +94,16 @@ def home(request):
 
 def about(request):
     template = "about_en.html"
-    if get_language() == "ru":
-        template = "about_ru.html"
+    if get_language() == "de":
+        template = "about_de.html"
 
     return render(request, "website/{}".format(template), {"page": "about"})
 
 
 def server(request):
     template = "server_en.html"
-    if get_language() == "ru":
-        template = "server_ru.html"
+    if get_language() == "de":
+        template = "server_de.html"
     if platform.python_implementation() == "PyPy":
         platform_name = "PyPy3"
     else:
@@ -139,8 +139,8 @@ def championships(request):
 
 def contacts(request):
     template = "contacts_en.html"
-    if get_language() == "ru":
-        template = "contacts_ru.html"
+    if get_language() == "de":
+        template = "contacts_de.html"
 
     return render(request, "website/{}".format(template), {"page": "contacts"})
 
@@ -317,16 +317,16 @@ def update_info_from_pantheon_api(request):
 
 def online_tournament_rules(request):
     template = "rules_en.html"
-    if get_language() == "ru":
-        template = "rules_ru.html"
+    if get_language() == "de":
+        template = "rules_de.html"
 
     return render(request, "website/{}".format(template))
 
 
 def rating_faq(request):
     template = "rating_faq_en.html"
-    if get_language() == "ru":
-        template = "rating_faq_ru.html"
+    if get_language() == "de":
+        template = "rating_faq_de.html"
 
     return render(request, "website/{}".format(template))
 

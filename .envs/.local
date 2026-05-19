@@ -2,7 +2,7 @@ SECRET_KEY=hA(HD78f9ahf98ashf9924h&&das7dasfhiuasf9
 DEBUG=true
 DJANGO_LOG_LEVEL=DEBUG
 
-ALLOWED_HOSTS=0.0.0.0
+ALLOWED_HOSTS=0.0.0.0,localhost,127.0.0.1
 
 # https://docs.djangoproject.com/en/3.0/topics/async/#async-safety
 DJANGO_ALLOW_ASYNC_UNSAFE=true
@@ -12,3 +12,10 @@ POSTGRES_PORT=5432
 POSTGRES_DB=LOCAL_DB
 POSTGRES_USER=portal
 POSTGRES_PASSWORD=password
+
+DATABASE_URL=postgresql://portal:password@db:5432/LOCAL_DB
+
+PANTHEON_AUTH_API_URL=http://frey.pantheon.local
+PANTHEON_NEW_API_URL=http://mimir.pantheon.local
+PANTHEON_DB_URL=postgresql://portal:password@db.pantheon.internal:5432/pantheon
+PANTHEON_FRONTEND_URL=http://sigrun.pantheon.local

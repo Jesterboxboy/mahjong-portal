@@ -128,7 +128,7 @@ class PlayerHelper:
             city_object = None
             if current_player is None:
                 try:
-                    city_object = City.objects.get(name_ru=feed_city) if feed_city is not None else None
+                    city_object = City.objects.get(name_de=feed_city) if feed_city is not None else None
                 except City.DoesNotExist:
                     city_object = None
                 if city_object is not None:
@@ -376,8 +376,8 @@ class PlayerHelper:
 
     @staticmethod
     def __get_players_by_ru_full_name(all_full_names: List[str], city_object=None) -> List[Player]:
-        first_name_conditions = reduce(operator.or_, (Q(first_name_ru__iexact=x) for x in all_full_names))
-        last_name_conditions = reduce(operator.or_, (Q(last_name_ru__iexact=x) for x in all_full_names))
+        first_name_conditions = reduce(operator.or_, (Q(first_name_de__iexact=x) for x in all_full_names))
+        last_name_conditions = reduce(operator.or_, (Q(last_name_de__iexact=x) for x in all_full_names))
         if city_object:
             query = first_name_conditions & last_name_conditions & Q(city=city_object) & Q(is_exclude_from_rating=False)
             return Player.objects.filter(query)

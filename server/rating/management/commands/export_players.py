@@ -14,14 +14,14 @@ class Command(BaseCommand):
 
             players = Player.objects.filter(country__code="RU")
 
-            rows = [["id", "last_name_ru", "first_name_ru", "last_name_en", "first_name_en", "ema_id"]]
+            rows = [["id", "last_name_de", "first_name_de", "last_name_en", "first_name_en", "ema_id"]]
 
             for player in players:
                 rows.append(
                     [
                         player.id,
-                        player.last_name_ru,
-                        player.first_name_ru,
+                        player.last_name_de,
+                        player.first_name_de,
                         player.last_name_en,
                         player.first_name_en,
                         player.ema_id,

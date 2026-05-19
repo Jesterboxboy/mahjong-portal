@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}
+    Online-Turnierregeln
+{% endblock %}
+
+{% block content %}
+    <div>
+        <h1>Online-Turnierregeln</h1>
+        <ol>
+            <li>Startpunkte: 30.000</li>
+            <li>Bankrott (negativer Punktestand während eines Hanchans) ist erlaubt</li>
+            <li>Wenn der Dealer in Oorasu gewinnt, geht das Spiel weiter, auch wenn er auf dem 1. Platz liegt</li>
+            <li>Uma 30/10, kein Oka</li>
+        </ol>
+        <p>Nach dem 3. Hanchan gibt es eine 30-minütige Mittagspause. Pausen zwischen den übrigen Hanchans betragen 5 Minuten.</p>
+    </div>
+{% endblock %}
+
+{% block meta_tags %}
+    <meta name="description" content="Online-Turnierregeln">
+    <meta property="og:description" content="Online-Turnierregeln">
+{% endblock %}

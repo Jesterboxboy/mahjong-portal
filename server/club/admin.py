@@ -26,10 +26,10 @@ class ClubAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": [
-                    "name_ru",
+                    "name_de",
                     "name_en",
                     "slug",
-                    "description_ru",
+                    "description_de",
                     "description_en",
                 ]
             },

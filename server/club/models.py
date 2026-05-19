@@ -36,7 +36,8 @@ class Club(BaseModel):
     def get_link_to_club_rating(self, event_id=None):
         if not event_id:
             event_id = self.current_club_rating_pantheon_id
-        return f"https://rating.riichimahjong.org/event/{event_id}/order/rating"
+        from django.conf import settings
+        return f"{settings.PANTHEON_FRONTEND_URL}/event/{event_id}/order/rating"
 
     def get_archive_link_to_club_rating(self, event_id=None):
         if not event_id:

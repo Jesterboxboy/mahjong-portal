@@ -79,7 +79,7 @@ class Command(BaseCommand):
             # let's try to match player by first and last name
             if not player:
                 try:
-                    player = Player.objects.get(first_name_ru=first_name, last_name_ru=last_name)
+                    player = Player.objects.get(first_name_de=first_name, last_name_de=last_name)
                     player.pantheon_id = pantheon_player.id
                     player.save()
                 except Player.DoesNotExist:
@@ -88,7 +88,7 @@ class Command(BaseCommand):
                     # if we have multiple players with same name
                     # let's try to add city to query
                     try:
-                        player = Player.objects.get(first_name_ru=first_name, last_name_ru=last_name, city=club.city)
+                        player = Player.objects.get(first_name_de=first_name, last_name_de=last_name, city=club.city)
                     except (Player.DoesNotExist, Player.MultipleObjectsReturned):
                         # two players with same name from the same city
                         # we can't handle it automatically

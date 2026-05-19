@@ -137,7 +137,7 @@ DATABASE_ROUTERS = ["club.pantheon_games.db_router.PantheonRouter"]
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
 LANGUAGE_CODE = "en"
-LANGUAGES = [["en", "English"], ["ru", "Russian"]]
+LANGUAGES = [["en", "English"], ["de", "German"]]
 
 LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
 
@@ -221,6 +221,7 @@ PANTHEON_AUTH_API_URL = os.environ.get("PANTHEON_AUTH_API_URL", None)
 PANTHEON_NEW_API_URL = os.environ.get("PANTHEON_NEW_API_URL", None)
 PANTHEON_ADMIN_COOKIE = os.environ.get("PANTHEON_ADMIN_COOKIE", None)
 PANTHEON_ADMIN_ID = os.environ.get("PANTHEON_ADMIN_ID", None)
+PANTHEON_FRONTEND_URL = os.environ.get("PANTHEON_FRONTEND_URL", "https://rating.riichimahjong.org")
 
 PANTHEON_TOURNAMENT_EVENT_ID = os.environ.get("PANTHEON_TOURNAMENT_EVENT_ID", None)
 TOURNAMENT_ID = os.environ.get("TOURNAMENT_ID", None)

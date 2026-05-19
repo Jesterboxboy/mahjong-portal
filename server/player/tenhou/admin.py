@@ -39,8 +39,8 @@ class TenhouAggregatedStatisticsAdmin(admin.ModelAdmin):
 
     list_filter = ["tenhou_object__is_active"]
     search_fields = [
-        "tenhou_object__player__first_name_ru",
-        "tenhou_object__player__last_name_ru",
+        "tenhou_object__player__first_name_de",
+        "tenhou_object__player__last_name_de",
         "tenhou_object__player__first_name_en",
         "tenhou_object__player__last_name_en",
     ]

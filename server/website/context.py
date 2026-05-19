@@ -12,4 +12,5 @@ def context(request):
         "SCHEME": settings.SCHEME,
         "SHORT_DATE_FORMAT": language == "ru" and "d.m.Y" or "Y-m-d",
         "CURRENT_YEAR": timezone.now().year,
+        "PANTHEON_FRONTEND_URL": settings.PANTHEON_FRONTEND_URL,
     }

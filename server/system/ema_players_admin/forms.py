@@ -8,14 +8,14 @@ from player.models import Player
 
 
 class AddPlayerForm(forms.ModelForm):
-    last_name_ru = forms.CharField(label="Фамилия (на русском)")
-    first_name_ru = forms.CharField(label="Имя (на русском)")
-    last_name_en = forms.CharField(label="Фамилия (на английском)")
-    first_name_en = forms.CharField(label="Имя (на английском)")
+    last_name_de = forms.CharField(label="Nachname (auf Deutsch)")
+    first_name_de = forms.CharField(label="Vorname (auf Deutsch)")
+    last_name_en = forms.CharField(label="Nachname (auf Englisch)")
+    first_name_en = forms.CharField(label="Vorname (auf Englisch)")
 
     class Meta:
         model = Player
-        fields = ["last_name_ru", "first_name_ru", "last_name_en", "first_name_en", "city"]
+        fields = ["last_name_de", "first_name_de", "last_name_en", "first_name_en", "city"]
 
     def __init__(self, *args, **kwargs):
         super(AddPlayerForm, self).__init__(*args, **kwargs)
@@ -23,15 +23,15 @@ class AddPlayerForm(forms.ModelForm):
     def clean(self):
         data = super(AddPlayerForm, self).clean()
 
-        first_name_ru = data.get("first_name_ru")
-        last_name_ru = data.get("last_name_ru")
+        first_name_de = data.get("first_name_de")
+        last_name_de = data.get("last_name_de")
 
-        if first_name_ru and last_name_ru:
-            first_name_ru = first_name_ru.title()
-            last_name_ru = last_name_ru.title()
+        if first_name_de and last_name_de:
+            first_name_de = first_name_de.title()
+            last_name_de = last_name_de.title()
 
             try:
-                player = Player.objects.get(first_name_ru=first_name_ru, last_name_ru=last_name_ru)
+                player = Player.objects.get(first_name_de=first_name_de, last_name_de=last_name_de)
                 if player.ema_id:
                     raise forms.ValidationError(
                         "Игрок с таким именем уже существует и у него есть ema id {}.".format(player.ema_id)

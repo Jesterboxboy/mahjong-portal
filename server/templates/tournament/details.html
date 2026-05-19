@@ -25,7 +25,7 @@
             {% get_current_language as LANGUAGE_CODE %}
 
             <p>
-                <a href="https://rating.riichimahjong.org/event/{{ tournament.new_pantheon_id }}/order/rating" target="_blank">{% trans 'Detailed tournament statistics' %}</a>
+                <a href="{{ PANTHEON_FRONTEND_URL }}/event/{{ tournament.new_pantheon_id }}/order/rating" target="_blank">{% trans 'Detailed tournament statistics' %}</a>
             </p>
         {% endif %}
 

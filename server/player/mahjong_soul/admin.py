@@ -10,9 +10,9 @@ class MSAccountAdmin(admin.ModelAdmin):
     search_fields = [
         "account_id",
         "account_name",
-        "player__first_name_ru",
+        "player__first_name_de",
         "player__first_name_en",
-        "player__last_name_ru",
+        "player__last_name_de",
         "player__last_name_en",
     ]
     raw_id_fields = ["player"]

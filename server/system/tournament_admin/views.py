@@ -107,7 +107,7 @@ def upload_results(request, tournament_id):
                         else:
                             Player.objects.get(first_name_en=first_name, last_name_en=last_name)
                     else:
-                        Player.objects.get(first_name_ru=first_name, last_name_ru=last_name)
+                        Player.objects.get(first_name_de=first_name, last_name_de=last_name)
                 except Player.DoesNotExist:
                     if is_ema:
                         not_found_users.append("{} {} {}".format(first_name, last_name, ema_id))
@@ -142,7 +142,7 @@ def upload_results(request, tournament_id):
                             else:
                                 player = Player.objects.get(first_name_en=first_name, last_name_en=last_name)
                         else:
-                            player = Player.objects.get(first_name_ru=first_name, last_name_ru=last_name)
+                            player = Player.objects.get(first_name_de=first_name, last_name_de=last_name)
                     else:
                         player_string = "{} {}".format(last_name, first_name)
 

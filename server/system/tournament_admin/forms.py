@@ -21,12 +21,12 @@ class TournamentForm(forms.ModelForm):
     class Meta:
         model = Tournament
         fields = [
-            "name_ru",
+            "name_de",
             "name_en",
             "slug",
             "start_date",
             "end_date",
-            "registration_description_ru",
+            "registration_description_de",
             "registration_description_en",
         ]
 

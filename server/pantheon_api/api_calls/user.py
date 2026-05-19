@@ -14,6 +14,7 @@ def login_through_pantheon(email, password):
         ctx=Context(),
         request=frey_pb2.AuthAuthorizePayload(email=email, password=password),
         server_path_prefix="/v2",
+        timeout=30,
     )
 
 

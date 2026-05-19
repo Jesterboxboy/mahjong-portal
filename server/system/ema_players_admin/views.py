@@ -44,8 +44,8 @@ def _get_players_query(query=None):
 
     if query:
         players = players.filter(
-            Q(first_name_ru__icontains=query)
-            | Q(last_name_ru__icontains=query)
+            Q(first_name_de__icontains=query)
+            | Q(last_name_de__icontains=query)
             | Q(first_name_en__icontains=query)
             | Q(last_name_en__icontains=query)
             | Q(ema_id__icontains=query)

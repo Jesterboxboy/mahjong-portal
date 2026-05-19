@@ -129,7 +129,7 @@ def tournament_announcement(request, slug):
 
     initial = {"tournament": tournament}
     if tournament.city and tournament.fill_city_in_registration:
-        initial["city"] = tournament.city.name_ru
+        initial["city"] = tournament.city.name_de
 
     if tournament.is_online():
         if tournament.is_majsoul_tournament and tournament.is_pantheon_registration:
@@ -252,7 +252,7 @@ def pantheon_tournament_registration(request, tournament_id):
     first_name, last_name = split_name(full_name)
 
     player = PlayerHelper.find_player_smart(player_full_name=full_name)
-    city_object = City.objects.filter(name_ru=data["city"].title()).first()
+    city_object = City.objects.filter(name_de=data["city"].title()).first()
 
     if not tournament.is_majsoul_tournament and not data["tenhou_id"]:
         return redirect(tournament.get_url() + "?error=tenhou_id")
@@ -329,7 +329,7 @@ def tournament_registration(request, tournament_id):
 
         try:
             if instance.city:
-                instance.city_object = City.objects.get(name_ru=instance.city)
+                instance.city_object = City.objects.get(name_de=instance.city)
         except City.DoesNotExist:
             pass
 

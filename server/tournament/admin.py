@@ -28,7 +28,7 @@ class TournamentAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ["name_en"]}
     list_display = ["name", "country", "end_date", "is_upcoming", "export"]
     list_filter = ["is_event", "tournament_type", "russian_cup", "country"]
-    search_fields = ["name_ru", "name_en"]
+    search_fields = ["name_de", "name_en"]
 
     ordering = ["-end_date"]
 
@@ -107,8 +107,8 @@ class TournamentResultAdmin(admin.ModelAdmin):
     list_display = ["tournament", "player", "place", "scores"]
     search_fields = [
         "tournament__name",
-        "player__last_name_ru",
-        "player__first_name_ru",
+        "player__last_name_de",
+        "player__first_name_de",
         "player__last_name_en",
         "player__first_name_en",
         "player_string",

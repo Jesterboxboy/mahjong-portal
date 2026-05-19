@@ -14,13 +14,10 @@ from pantheon_api.frey_twirp import FreyClient
 from pantheon_api.mimir_twirp import MimirClient
 
 logger = logging.getLogger()
-# todo move to settings
-PRODUCTION_PANTHEON_GAME_MANAGMENT_API = "https://gameapi.riichimahjong.org/"
-PRODUCTION_PANTHEON_USER_MANAGMENT_API = "https://userapi.riichimahjong.org/"
 
 
 def get_new_pantheon_swiss_sortition(pantheonEventId, adminPersonId):
-    client = MimirClient(PRODUCTION_PANTHEON_GAME_MANAGMENT_API)
+    client = MimirClient(settings.PANTHEON_NEW_API_URL)
 
     context = Context()
     # todo pass pantheon event's owner token
@@ -38,7 +35,7 @@ def get_new_pantheon_swiss_sortition(pantheonEventId, adminPersonId):
 
 
 def get_pantheon_public_person_information(personId, email):
-    client = FreyClient(PRODUCTION_PANTHEON_USER_MANAGMENT_API)
+    client = FreyClient(settings.PANTHEON_AUTH_API_URL)
 
     response = client.GetPersonalInfo(
         ctx=Context(),
@@ -61,7 +58,7 @@ def get_pantheon_public_person_information(personId, email):
 
 
 def update_personal_info(person_info, adminPersonId, pantheonEventId, isMajsoulTournament):
-    client = FreyClient(PRODUCTION_PANTHEON_USER_MANAGMENT_API)
+    client = FreyClient(settings.PANTHEON_AUTH_API_URL)
     context = Context()
     # todo pass pantheon event's owner token
     context.set_header("X-Auth-Token", settings.PANTHEON_ADMIN_COOKIE)
@@ -101,7 +98,7 @@ def update_personal_info(person_info, adminPersonId, pantheonEventId, isMajsoulT
 
 
 def register_player(adminPersonId, pantheonEventId, pantheonId):
-    client = MimirClient(PRODUCTION_PANTHEON_GAME_MANAGMENT_API)
+    client = MimirClient(settings.PANTHEON_NEW_API_URL)
 
     context = Context()
     # todo pass pantheon event's owner token
@@ -142,7 +139,7 @@ def add_user_to_new_pantheon(
 
 
 def upload_replay_through_pantheon(eventId, platformId, contentType, replayHash, logTime, content):
-    client = MimirClient(PRODUCTION_PANTHEON_GAME_MANAGMENT_API)
+    client = MimirClient(settings.PANTHEON_NEW_API_URL)
 
     context = Context()
     context.set_header("HTTP-X-EXTERNAL-QUERY-SECRET", settings.EXTERNAL_QUERY_SECRET)
@@ -162,7 +159,7 @@ def upload_replay_through_pantheon(eventId, platformId, contentType, replayHash,
 
 
 def add_online_replay_through_pantheon(eventId, tenhouGameLink):
-    client = MimirClient(PRODUCTION_PANTHEON_GAME_MANAGMENT_API)
+    client = MimirClient(settings.PANTHEON_NEW_API_URL)
 
     context = Context()
     context.set_header("HTTP-X-EXTERNAL-QUERY-SECRET", settings.EXTERNAL_QUERY_SECRET)
@@ -178,7 +175,7 @@ def add_online_replay_through_pantheon(eventId, tenhouGameLink):
 
 
 def add_penalty_game(pantheonEventId, adminPersonId, playerIds):
-    client = MimirClient(PRODUCTION_PANTHEON_GAME_MANAGMENT_API)
+    client = MimirClient(settings.PANTHEON_NEW_API_URL)
 
     context = Context()
     # todo pass pantheon event's owner token
@@ -194,7 +191,7 @@ def add_penalty_game(pantheonEventId, adminPersonId, playerIds):
 
 
 def send_team_names_to_pantheon(pantheonEventId, adminPersonId, teamMapping):
-    client = MimirClient(PRODUCTION_PANTHEON_GAME_MANAGMENT_API)
+    client = MimirClient(settings.PANTHEON_NEW_API_URL)
 
     context = Context()
     # todo pass pantheon event's owner token
@@ -218,7 +215,7 @@ def send_team_names_to_pantheon(pantheonEventId, adminPersonId, teamMapping):
 
 
 def get_rating_table(eventId):
-    client = MimirClient(PRODUCTION_PANTHEON_GAME_MANAGMENT_API)
+    client = MimirClient(settings.PANTHEON_NEW_API_URL)
 
     context = Context()
     context.set_header("HTTP-X-EXTERNAL-QUERY-SECRET", settings.EXTERNAL_QUERY_SECRET)
