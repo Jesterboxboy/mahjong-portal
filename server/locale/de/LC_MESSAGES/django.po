@@ -2451,3 +2451,45 @@ msgstr "Über uns"
 
 msgid "Toggle theme"
 msgstr "Theme umschalten"
+
+msgid "Riichi Mahjong in Austria"
+msgstr "Riichi Mahjong in Österreich"
+
+msgid "Strategy, experience and luck determine victory in this Japanese game for four players."
+msgstr "Strategie, Erfahrung und Glück bestimmen den Sieg in diesem japanischen Spiel für vier Personen."
+
+msgid "What you'll find here"
+msgstr "Was du hier alles findest"
+
+msgid "Here you will find all important information about the Japanese variant of Mahjong."
+msgstr "Auf dieser Seite findet ihr alle wichtigen Informationen über die japanische Variante von Mahjong."
+
+msgid "Whether you are a beginner looking for the rules, or have been playing for a while and want to know when the next tournaments are."
+msgstr "Egal ob ihr Anfänger seid und euch über die Regeln informieren wollt, oder schon seit einiger Zeit spielt und schauen wollt, wann die nächsten Turniere stattfinden."
+
+msgid "Current and upcoming national Riichi Mahjong tournaments and international events."
+msgstr "Aktuelle und kommende nationale Riichi-Mahjong-Turniere sowie internationale Veranstaltungen."
+
+msgid "Find a Riichi Mahjong club near you — throughout Austria."
+msgstr "Findet einen Riichi-Mahjong-Club in eurer Nähe — in ganz Österreich."
+
+msgid "Austrian Championship"
+msgstr "Staatsmeisterschaft"
+
+msgid "The Austrian ranking and the reigning national champion"
+msgstr "Die österreichische Rangliste und der amtierende Staatsmeister"
+
+msgid "view here"
+msgstr "hier ansehen"
+
+msgid "EMA Member"
+msgstr "EMA-Mitglied"
+
+msgid "The association is a member of the"
+msgstr "Der Verband ist Mitglied der"
+
+msgid "All news →"
+msgstr "Alle Neuigkeiten →"
+
+msgid "Event"
+msgstr "Veranstaltung"

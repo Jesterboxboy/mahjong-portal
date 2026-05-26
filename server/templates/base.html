@@ -131,60 +131,51 @@
     </div>
 </nav>
 
-<main role="main">
+<main role="main" class="{% block main_class %}{% endblock %}">
+    {% block hero %}{% endblock %}
     <div class="container">
         {% block content %}
         {% endblock %}
     </div>
 </main>
 
-<footer class="d-print-none footer mt-auto py-3">
+<footer class="d-print-none footer mt-auto pt-5 pb-3 border-top">
     <div class="container">
-        <div class="row">
-            <div class="col languageChange">
-                <form action="{% url 'set_language' %}" method="post">
-                    {% csrf_token %}
-                    <input name="next" type="hidden" value="{{ redirect_to }}" />
-
-                    <div class="form-group">
-                        <select name="language" class="form-control form-control-sm" id="languageChangeInputBottom">
-                            {% get_current_language as LANGUAGE_CODE %}
-                            {% get_available_languages as LANGUAGES %}
-                            {% get_language_info_list for LANGUAGES as languages %}
-                            {% for language in languages %}
-                                <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %}>
-                                    {{ language.name_local }} ({{ language.code }})
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </form>
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-12">
+                <a class="navbar-brand mb-3 d-inline-block" href="{% url 'home' %}">
+                    <img src="{% static 'img/small_logo.png' %}" alt="ÖRMV" height="36">
+                </a>
+                <p class="small text-muted mb-2">
+                    Österreichischer Riichi Mahjong Verband —
+                    Mitglied der <a href="https://mahjong-europe.org/" target="_blank" rel="noopener" class="text-muted">European Mahjong Association (EMA)</a>.
+                </p>
+                <div class="d-flex gap-3 small">
+                    <a href="https://www.facebook.com/riichiverband/" target="_blank" rel="noopener" class="text-muted text-decoration-none">Facebook</a>
+                </div>
             </div>
-            <div class="col text-end">
-                <form class="form-inline" action="{% url 'search' %}">
-                    <div class="row">
-                        <div class="col-lg-10 col-sm-6">
-                            <input class="form-control me-sm-2" type="text" name="q" placeholder="{% trans 'Search' %}" aria-label="{% trans 'Search' %}" {% if search_query %}value="{{ search_query }}"{% endif %} required="required">
-                        </div>
-                        <div class="col-lg-2 col-sm-6">
-                            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">{% trans 'Search' %}</button>
-                        </div>
-                    </div>
-                </form>
+            <div class="col-lg-2 col-md-3 col-6">
+                <h6 class="fw-semibold mb-3">{% trans "Navigation" %}</h6>
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-1"><a href="{% url 'news_list' %}" class="text-muted text-decoration-none">{% trans "News" %}</a></li>
+                    <li class="mb-1"><a href="{% url 'tournament_list' CURRENT_YEAR|default:2020 %}" class="text-muted text-decoration-none">{% trans "Tournaments" %}</a></li>
+                    <li class="mb-1"><a href="{% url 'club_list' %}" class="text-muted text-decoration-none">{% trans "Clubs" %}</a></li>
+                    <li class="mb-1"><a href="{% url 'rangliste' %}" class="text-muted text-decoration-none">{% trans "Rankings" %}</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-2 col-md-3 col-6">
+                <h6 class="fw-semibold mb-3">{% trans "About" %}</h6>
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-1"><a href="{% url 'about' %}" class="text-muted text-decoration-none">{% trans "About us" %}</a></li>
+                    <li class="mb-1"><a href="{% url 'contacts' %}" class="text-muted text-decoration-none">{% trans "Contacts" %}</a></li>
+                    <li class="mb-1"><a href="{% url 'championships' %}" class="text-muted text-decoration-none">Staatsmeisterschaft</a></li>
+                </ul>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <div class="version-block text-start">
-                    <a href="https://github.com/MahjongRepository/mahjong-portal" target="_blank" style="top: -2px;">
-                        {% trans 'source code' %}
-                    </a>
-                </div>
-                <div class="version-block text-start">
-                    <a href="{% url 'server' %}" style="top: -2px;">
-                        {% trans 'about server' %}
-                    </a>
-                </div>
+        <div class="row mt-4 pt-3 border-top">
+            <div class="col small text-muted">
+                <a href="https://github.com/MahjongRepository/mahjong-portal" target="_blank" rel="noopener" class="text-muted me-3">{% trans "source code" %}</a>
+                <a href="{% url 'server' %}" class="text-muted">{% trans "about server" %}</a>
             </div>
         </div>
     </div>

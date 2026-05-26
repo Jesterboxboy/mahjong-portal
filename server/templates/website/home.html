@@ -1,62 +1,153 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load i18n static %}
 
-{% block title %}Österreichisches Riichi Mahjong{% endblock %}
-
-{% block content %}
-    <div>
-        {% if current_tournaments %}
-            <h1>{% trans 'Current tournaments' %}</h1>
-            {% with tournaments=current_tournaments is_upcoming=True show_tournament_type=True %}
-                {% include 'tournament/_current_tournaments_table.html' %}
-            {% endwith %}
-        {% endif %}
-
-        {% if upcoming_tournaments %}
-            <h1>{% trans 'Upcoming tournaments' %}</h1>
-            {% with tournaments=upcoming_tournaments is_upcoming=True leagues=leagues show_tournament_type=True %}
-                {% include 'tournament/_tournaments_table.html' %}
-            {% endwith %}
-        {% endif %}
-
-        {% if events %}
-            <h1>{% trans 'Events' %}</h1>
-            {% with tournaments=events is_upcoming=True is_event=True %}
-                {% include 'tournament/_tournaments_table.html' %}
-            {% endwith %}
-        {% endif %}
-
-        {% if latest_news %}
-            <h1>Neuigkeiten</h1>
-            <div class="row row-cols-1 row-cols-md-2 g-3 mt-1">
-                {% for article in latest_news %}
-                    <div class="col">
-                        <div class="card h-100">
-                            {% if article.image %}
-                                <img src="{{ article.image }}" class="card-img-top" alt="{{ article.title }}" style="max-height: 160px; object-fit: cover;">
-                            {% endif %}
-                            <div class="card-body">
-                                <span class="badge {% if article.category == 'veranstaltung' %}bg-primary{% else %}bg-secondary{% endif %} mb-1">
-                                    {% if article.category == 'veranstaltung' %}Veranstaltung{% else %}News{% endif %}
-                                </span>
-                                <h6 class="card-title mt-1">
-                                    <a href="{% url 'news_detail' article.slug %}" class="text-decoration-none">{{ article.title }}</a>
-                                </h6>
-                                {% if article.excerpt %}
-                                    <p class="card-text text-muted small">{{ article.excerpt|truncatewords:20 }}</p>
-                                {% endif %}
-                            </div>
-                            <div class="card-footer text-muted small">{{ article.published_date|date:"d.m.Y" }}</div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            <p class="mt-3"><a href="{% url 'news_list' %}">Alle Neuigkeiten &amp; Termine &rarr;</a></p>
-        {% endif %}
-    </div>
-{% endblock %}
+{% block title %}Österreichischer Riichi Mahjong Verband{% endblock %}
 
 {% block meta_tags %}
     <meta name="description" content="Österreichischer Riichi Mahjong Verband — Turniere, Klubs und Rangliste.">
-    <meta property="og:description" content="Österreichischer Riichi Mahjong Verband — Turniere, Klubs und Rangliste.">
+{% endblock %}
+
+{% block main_class %}has-hero{% endblock %}
+
+{% block hero %}
+<div style="min-height:55vh; padding-top:80px; padding-bottom:3.5rem;
+            background: linear-gradient(rgba(20,10,35,.65), rgba(10,20,50,.72)),
+                        url('{% static "img/banner.jpg" %}') center/cover no-repeat;
+            display:flex; align-items:flex-end;">
+    <div class="container text-white">
+        <p class="text-uppercase fw-semibold small mb-3" style="letter-spacing:.12em; opacity:.7;">
+            Österreichischer Riichi Mahjong Verband
+        </p>
+        <h1 class="display-4 fw-bold mb-3" style="max-width:700px; line-height:1.15;">
+            {% trans "Riichi Mahjong in Austria" %}
+        </h1>
+        <p class="lead mb-0" style="max-width:620px; opacity:.85;">
+            {% trans "Strategy, experience and luck determine victory in this Japanese game for four players." %}
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ===== INTRO / WHAT YOU'LL FIND ===== #}
+<section class="py-5 border-bottom">
+    <div class="row g-5 align-items-start">
+        <div class="col-lg-8">
+            <h2 class="mb-3">{% trans "What you'll find here" %}</h2>
+            <p class="text-muted mb-4">
+                {% trans "Here you will find all important information about the Japanese variant of Mahjong." %}
+                {% trans "Whether you are a beginner looking for the rules, or have been playing for a while and want to know when the next tournaments are." %}
+            </p>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="home-feature-icon text-primary">🏆</div>
+                        <div>
+                            <h6 class="mb-1">{% trans "Tournaments & Events" %}</h6>
+                            <p class="text-muted small mb-0">{% trans "Current and upcoming national Riichi Mahjong tournaments and international events." %}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="home-feature-icon text-primary">👥</div>
+                        <div>
+                            <h6 class="mb-1"><a href="{% url 'club_list' %}" class="text-decoration-none">{% trans "Clubs" %}</a></h6>
+                            <p class="text-muted small mb-0">{% trans "Find a Riichi Mahjong club near you — throughout Austria." %}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="home-feature-icon text-primary">📊</div>
+                        <div>
+                            <h6 class="mb-1">{% trans "Austrian Championship" %}</h6>
+                            <p class="text-muted small mb-0">{% trans "The Austrian ranking and the reigning national champion" %} — <a href="{% url 'championships' %}">{% trans "view here" %}</a>.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="home-feature-icon text-primary">🌍</div>
+                        <div>
+                            <h6 class="mb-1">{% trans "EMA Member" %}</h6>
+                            <p class="text-muted small mb-0">{% trans "The association is a member of the" %} <a href="https://mahjong-europe.org/" target="_blank" rel="noopener">European Mahjong Association</a>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ===== CURRENT & UPCOMING TOURNAMENTS ===== #}
+{% if current_tournaments or upcoming_tournaments %}
+<section class="py-5 border-bottom">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0">{% trans "Upcoming tournaments" %}</h2>
+        <a href="{% url 'tournament_list' CURRENT_YEAR|default:2026 %}" class="btn btn-sm btn-outline-secondary">{% trans "All tournaments" %} →</a>
+    </div>
+
+    {% if current_tournaments %}
+        <h6 class="text-muted text-uppercase fw-semibold mb-2" style="letter-spacing:.08em;font-size:.75rem;">{% trans "Current tournaments" %}</h6>
+        {% with tournaments=current_tournaments is_upcoming=True show_tournament_type=True %}
+            {% include 'tournament/_current_tournaments_table.html' %}
+        {% endwith %}
+    {% endif %}
+
+    {% if upcoming_tournaments %}
+        {% if current_tournaments %}<h6 class="text-muted text-uppercase fw-semibold mt-4 mb-2" style="letter-spacing:.08em;font-size:.75rem;">{% trans "Coming up" %}</h6>{% endif %}
+        {% with tournaments=upcoming_tournaments is_upcoming=True leagues=leagues show_tournament_type=True %}
+            {% include 'tournament/_tournaments_table.html' %}
+        {% endwith %}
+    {% endif %}
+</section>
+{% endif %}
+
+{# ===== EVENTS ===== #}
+{% if events %}
+<section class="py-5 border-bottom">
+    <h2 class="mb-4">{% trans "Events" %}</h2>
+    {% with tournaments=events is_upcoming=True is_event=True %}
+        {% include 'tournament/_tournaments_table.html' %}
+    {% endwith %}
+</section>
+{% endif %}
+
+{# ===== LATEST NEWS ===== #}
+{% if latest_news %}
+<section class="py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0">{% trans "News" %}</h2>
+        <a href="{% url 'news_list' %}" class="btn btn-sm btn-outline-secondary">{% trans "All news →" %}</a>
+    </div>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+        {% for article in latest_news %}
+            <div class="col">
+                <div class="card h-100 shadow-sm news-card">
+                    {% if article.image %}
+                        <img src="{{ article.image }}" class="card-img-top" alt="{{ article.title }}" style="height:130px;object-fit:cover;">
+                    {% else %}
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-secondary bg-opacity-10" style="height:130px;font-size:2.5rem;">🀄</div>
+                    {% endif %}
+                    <div class="card-body">
+                        <span class="badge {% if article.category == 'veranstaltung' %}bg-primary{% else %}bg-secondary{% endif %} mb-2">
+                            {% if article.category == 'veranstaltung' %}{% trans "Event" %}{% else %}{% trans "News" %}{% endif %}
+                        </span>
+                        <h6 class="card-title">
+                            <a href="{% url 'news_detail' article.slug %}" class="stretched-link text-decoration-none">{{ article.title }}</a>
+                        </h6>
+                        {% if article.excerpt %}
+                            <p class="card-text text-muted small">{{ article.excerpt|truncatewords:15 }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer text-muted small">{{ article.published_date|date:"d.m.Y" }}</div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
 {% endblock %}
