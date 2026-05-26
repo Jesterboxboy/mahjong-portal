@@ -763,7 +763,7 @@ msgstr "Turniere"
 #: templates/base.html:90 templates/club/list.html:10
 #: templates/website/city.html:11
 msgid "Clubs"
-msgstr "Vereine"
+msgstr "Klubs"
 
 #: templates/base.html:93 templates/title/list.html:5
 #: templates/title/list.html:16
@@ -821,7 +821,7 @@ msgstr "Kontakt"
 #: templates/tournament/application.html:106
 #: templates/tournament/application.html:107
 msgid "Tournament application"
-msgstr "Turnierbeantragung"
+msgstr "Turnieranmeldung"
 
 #: templates/base.html:117 templates/website/championships.html:10
 msgid "Championships"
@@ -2439,3 +2439,15 @@ msgstr "Tsuu iisou"
 #: utils/tenhou/yakuman_list.py:20
 msgid "Kazoe yakuman"
 msgstr "Kazoe yakuman"
+
+msgid "News"
+msgstr "Neuigkeiten"
+
+msgid "Rankings"
+msgstr "Rangliste"
+
+msgid "About us"
+msgstr "Über uns"
+
+msgid "Toggle theme"
+msgstr "Theme umschalten"

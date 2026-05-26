@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Run Ranking Calculation – {{ period }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-3">Run Ranking Calculation</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ period.name }}</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Type</dt>
+                <dd class="col-sm-9">{{ period.get_event_type_display }}</dd>
+                <dt class="col-sm-3">Period</dt>
+                <dd class="col-sm-9">{{ period.start_date }} – {{ period.end_date }}</dd>
+                {% if period.calculated_at %}
+                <dt class="col-sm-3">Last calculated</dt>
+                <dd class="col-sm-9">{{ period.calculated_at }}</dd>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+
+    <div class="alert alert-warning">
+        <strong>Note:</strong> This will scrape the EMA website for all Austrian players and their results
+        within the quota period, then recalculate the ranking. Existing ranking rows for this period will be
+        replaced. This may take several minutes.
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Confirm &amp; Run</button>
+        <a href="{% url 'admin:austria_ranking_quotaperiod_changelist' %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}

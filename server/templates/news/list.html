@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Neuigkeiten{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Neuigkeiten</h1>
+
+    {% if page_obj.object_list %}
+        <div class="row row-cols-1 row-cols-md-2 g-4 mt-2">
+            {% for article in page_obj %}
+                <div class="col">
+                    <div class="card h-100">
+                        {% if article.image %}
+                            <img src="{{ article.image }}" class="card-img-top" alt="{{ article.title }}" style="max-height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <span class="badge {% if article.category == 'veranstaltung' %}bg-primary{% else %}bg-secondary{% endif %} mb-2">
+                                {% if article.category == 'veranstaltung' %}Veranstaltung{% else %}News{% endif %}
+                            </span>
+                            <h5 class="card-title">
+                                <a href="{% url 'news_detail' article.slug %}" class="text-decoration-none">{{ article.title }}</a>
+                            </h5>
+                            {% if article.excerpt %}
+                                <p class="card-text text-muted">{{ article.excerpt|truncatewords:30 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer text-muted small">
+                            {{ article.published_date|date:"d.m.Y" }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.has_other_pages %}
+            <nav class="mt-4" aria-label="Seitennavigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; Zurück</a>
+                        </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Weiter &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <p class="text-muted mt-4">Noch keine Artikel vorhanden.</p>
+    {% endif %}
+</div>
+{% endblock %}

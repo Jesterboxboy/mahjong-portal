@@ -2,7 +2,6 @@
 
 from django.db.models import F
 from django.shortcuts import get_object_or_404, render
-from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 
 from club.models import Club
@@ -10,12 +9,7 @@ from club.models import Club
 
 def club_list(request):
     clubs = Club.objects.all().order_by("city__name").prefetch_related("city")
-
-    map_language = "en_US"
-    if get_language() == "de":
-        map_language = "de_DE"
-
-    return render(request, "club/list.html", {"clubs": clubs, "map_language": map_language, "page": "club"})
+    return render(request, "club/list.html", {"clubs": clubs, "page": "club"})
 
 
 def club_details(request, slug):

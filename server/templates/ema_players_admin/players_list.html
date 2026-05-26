@@ -7,24 +7,24 @@
 
 {% block content %}
     <div>
-        <h2>Игроки с EMA номерами</h2>
+        <h2>Spieler mit EMA-Nummern</h2>
 
         <div>
             <div class="float-left">
                 <form action="">
                     <div class="input-group mb-3">
-                        <input type="text" class="form-control" value="{{ query|default:'' }}" placeholder="Поиск (имя или EMA номер)" aria-describedby="button-addon2" name="q">
+                        <input type="text" class="form-control" value="{{ query|default:'' }}" placeholder="Suche (Name oder EMA-Nummer)" aria-describedby="button-addon2" name="q">
                         <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Найти</button>
+                            <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Suchen</button>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="float-right">
                 <a href="{% url 'download_players_list_csv' %}{% if query %}?q={{ query }}{% endif %}" class="btn btn-warning">
-                    Скачать .CSV
+                    .CSV herunterladen
                 </a>
-                <a href="{% url 'add_new_player' %}" class="btn btn-success">Добавить нового игрока</a>
+                <a href="{% url 'add_new_player' %}" class="btn btn-success">Neuen Spieler hinzufügen</a>
             </div>
         </div>
         <br>
@@ -34,10 +34,10 @@
                 <thead>
                 <tr>
                     <th scope="col">#</th>
-                    <th scope="col">Имя</th>
-                    <th scope="col">EMA имя</th>
-                    <th scope="col">Город</th>
-                    <th scope="col">EMA номер</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">EMA-Name</th>
+                    <th scope="col">Stadt</th>
+                    <th scope="col">EMA-Nummer</th>
                 </tr>
                 </thead>
                 <tbody>

@@ -17,3 +17,7 @@ indent_size = 4
 
 [Makefile]
 indent_style = tab
+
+
+/user group add name=mktxp_group policy=api,read
+/user add name=mktxp_user group=mktxp_group password=tM+x7*EgyX!@Y^n2XW

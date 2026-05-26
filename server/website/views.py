@@ -22,17 +22,16 @@ from django.views.decorators.http import require_POST
 from haystack.forms import ModelSearchForm
 
 from account.models import PantheonInfoUpdateLog, User
+from austria_ranking.models import AustrianRanking, EmaTournamentResult, QuotaPeriod
 from club.models import Club
+from news.models import NewsArticle
 from player.models import Player, PlayerQuotaEvent
 from player.player_helper import PlayerHelper
 from player.tenhou.models import TenhouAggregatedStatistics, TenhouNickname
 from player.tenhou.tenhou_helper import TenhouHelper
-from rating.models import Rating, RatingResult
-from rating.utils import get_latest_rating_date
 from settings.models import City
 from tournament.models import Tournament, TournamentResult
 from utils.general import get_end_of_day
-from yagi_keiji_cup.models import YagiKeijiCupSettings
 
 logger = logging.getLogger()
 OLD_PANTHEON_TYPE = "old"
@@ -40,16 +39,6 @@ NEW_PANTHEON_TYPE = "new"
 
 
 def home(request):
-    rating = Rating.objects.get(type=Rating.RR)
-    today, rating_date = get_latest_rating_date(rating)
-    rating_results = (
-        RatingResult.objects.filter(rating=rating)
-        .filter(date=rating_date)
-        .prefetch_related("player")
-        .prefetch_related("player__city")
-        .order_by("place")
-    )[:16]
-
     current_date = get_end_of_day()
     all_tournaments = (
         Tournament.public.filter(is_upcoming=True)
@@ -66,28 +55,18 @@ def home(request):
         Tournament.public.filter(is_upcoming=True).filter(is_event=True).prefetch_related("city").order_by("start_date")
     )
 
-    is_yagi_keiji_cup_hidden = True
-    try:
-        yagi_settings = YagiKeijiCupSettings.objects.get(is_main=True)
-        is_yagi_keiji_cup_hidden = yagi_settings.is_hidden
-    except YagiKeijiCupSettings.DoesNotExist:
-        is_yagi_keiji_cup_hidden = True
+    latest_news = NewsArticle.objects.filter(is_published=True)[:4]
 
     return render(
         request,
         "website/home.html",
         {
             "page": "home",
-            "rating_results": rating_results,
-            "rating": rating,
             "current_tournaments": current_tournaments,
             "upcoming_tournaments": upcoming_tournaments,
             "events": events,
-            "rating_date": rating_date,
-            "today": today,
-            "is_last": True,
+            "latest_news": latest_news,
             "leagues": [],
-            "is_yagi_keiji_cup_hidden": is_yagi_keiji_cup_hidden,
         },
     )
 
@@ -98,6 +77,63 @@ def about(request):
         template = "about_de.html"
 
     return render(request, "website/{}".format(template), {"page": "about"})
+
+
+def _annotate_used_foreign(rankings, period):
+    """Attach used_foreign_pks (set of top-3 foreign EmaTournamentResult PKs) to each ranking."""
+    if not period:
+        for r in rankings:
+            r.used_foreign_pks = set()
+        return
+    foreign_results = EmaTournamentResult.objects.filter(
+        quota_period=period, is_austrian_tournament=False, points__gt=0
+    ).order_by("ema_id", "-points")
+    top3_by_player = {}
+    for r in foreign_results:
+        pks = top3_by_player.setdefault(r.ema_id, set())
+        if len(pks) < 3:
+            pks.add(r.pk)
+    for ranking in rankings:
+        ranking.used_foreign_pks = top3_by_player.get(ranking.ema_id, set())
+
+
+def rangliste(request):
+    current_period = QuotaPeriod.objects.filter(is_current=True).first()
+    all_periods = QuotaPeriod.objects.all()
+
+    rankings = []
+    if current_period:
+        rankings = list(AustrianRanking.objects.filter(quota_period=current_period).select_related("player"))
+        _annotate_used_foreign(rankings, current_period)
+
+    return render(
+        request,
+        "website/rangliste.html",
+        {
+            "page": "rangliste",
+            "period": current_period,
+            "all_periods": all_periods,
+            "rankings": rankings,
+        },
+    )
+
+
+def rangliste_period(request, pk: int):
+    period = get_object_or_404(QuotaPeriod, pk=pk)
+    all_periods = QuotaPeriod.objects.all()
+    rankings = list(AustrianRanking.objects.filter(quota_period=period).select_related("player"))
+    _annotate_used_foreign(rankings, period)
+
+    return render(
+        request,
+        "website/rangliste.html",
+        {
+            "page": "rangliste",
+            "period": period,
+            "all_periods": all_periods,
+            "rankings": rankings,
+        },
+    )
 
 
 def server(request):

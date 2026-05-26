@@ -36,6 +36,7 @@ from online.views import (
     send_team_names_to_pantheon,
 )
 from website.views import finished_tournaments_api, players_api, update_info_from_pantheon_api
+from austria_ranking.views import run_ranking_calculation
 
 sitemaps = {
     "static": StaticSitemap,
@@ -49,6 +50,7 @@ sitemaps = {
 }
 
 urlpatterns = [
+    url(r"^admin/austria-ranking/(?P<pk>\d+)/run/$", run_ranking_calculation, name="austria_ranking_run"),
     url(r"^admin/", include(admin.site.urls[:2])),
     url(r"^i18n/", include("django.conf.urls.i18n")),
     url(
@@ -95,5 +97,6 @@ urlpatterns += i18n_patterns(
     url(r"^league/", include("league.urls")),
     url(r"^titles/", include("title.urls")),
     url(r"^yagi-keiji-cup/", include("yagi_keiji_cup.urls")),
+    url(r"^neuigkeiten/", include("news.urls")),
     url("i18n/", include("django.conf.urls.i18n")),
 )

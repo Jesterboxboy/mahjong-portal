@@ -40,3 +40,10 @@ On your host machine you can set up these cron commands to make backups:
 # once a month
 0 0 2 * * cd /root/portal/ && make db-backup backup_type=monthly && /root/upload_files.sh
 ```
+
+
+### Changing translation
+change translation in django.po then run
+```
+docker compose exec -u root web python manage.py compilemessages
+```

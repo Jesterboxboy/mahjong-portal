@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Rankings" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h1 class="mb-0">{% trans "Rankings" %}</h1>
+
+        {% if all_periods %}
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label for="periodSelect" class="text-muted small mb-0">Zeitraum:</label>
+            <select id="periodSelect" class="form-select form-select-sm" style="width: auto;"
+                    onchange="window.location='/rangliste/' + this.value + '/'">
+                {% for p in all_periods %}
+                <option value="{{ p.pk }}" {% if period and p.pk == period.pk %}selected{% endif %}>
+                    {{ p.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if period %}
+        <p class="text-muted small">
+            Zeitraum: {{ period.start_date|date:"d.m.Y" }} – {{ period.end_date|date:"d.m.Y" }}
+            {% if period.calculated_at %}
+            &middot; Letzte Berechnung: {{ period.calculated_at|date:"d.m.Y H:i" }}
+            {% endif %}
+        </p>
+    {% endif %}
+
+    {% if rankings %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Spieler/in</th>
+                    <th class="text-end">AT-Punkte</th>
+                    <th class="text-end">Ausland (Top 3)</th>
+                    <th class="text-end fw-bold">Gesamt</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ranking in rankings %}
+                <tr>
+                    <td class="fw-bold">{{ ranking.rank_position }}</td>
+                    <td>
+                        {% if ranking.player %}
+                            <a href="{% url 'player_details' ranking.player.slug %}">{{ ranking.display_name }}</a>
+                        {% else %}
+                            {{ ranking.display_name }}
+                        {% endif %}
+                    </td>
+                    <td class="text-end">{{ ranking.at_points }}</td>
+                    <td class="text-end">{{ ranking.foreign_points }}</td>
+                    <td class="text-end fw-bold">{{ ranking.total_points }}</td>
+                    <td>
+                        <button class="btn btn-outline-secondary btn-sm"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#details-{{ ranking.pk }}"
+                                aria-expanded="false">
+                            Details
+                        </button>
+                    </td>
+                </tr>
+                <tr class="collapse" id="details-{{ ranking.pk }}">
+                    <td colspan="6" class="py-2 px-4 bg-body-secondary">
+                        {% with at_results=ranking.quota_period.ema_results.all|dictsortreversed:"points" %}
+                        {% comment %}Load detail rows from EmaTournamentResult{% endcomment %}
+                        {% endwith %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <strong>Österreich-Turniere</strong>
+                                <table class="table table-sm mt-1 mb-0">
+                                    <thead><tr><th>Turnier</th><th class="text-end">Punkte</th></tr></thead>
+                                    <tbody>
+                                    {% for r in ranking.quota_period.ema_results.all %}
+                                        {% if r.ema_id == ranking.ema_id and r.is_austrian_tournament and r.points > 0 %}
+                                        <tr class="table-success">
+                                            <td>{% if r.ema_tournament_url %}<a href="{{ r.ema_tournament_url }}" target="_blank" rel="noopener">{{ r.tournament_name }}</a>{% else %}{{ r.tournament_name }}{% endif %}</td>
+                                            <td class="text-end">{{ r.points }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Auslandsturniere (Top 3)</strong>
+                                <table class="table table-sm mt-1 mb-0">
+                                    <thead><tr><th>Turnier</th><th class="text-end">Punkte</th></tr></thead>
+                                    <tbody>
+                                    {% for r in ranking.quota_period.ema_results.all|dictsortreversed:"points" %}
+                                        {% if r.ema_id == ranking.ema_id and not r.is_austrian_tournament and r.points > 0 %}
+                                        <tr{% if r.pk in ranking.used_foreign_pks %} class="table-success"{% endif %}>
+                                            <td>{% if r.ema_tournament_url %}<a href="{{ r.ema_tournament_url }}" target="_blank" rel="noopener">{{ r.tournament_name }}</a>{% else %}{{ r.tournament_name }}{% endif %} <span class="text-muted small">({{ r.tournament_country_code|upper }})</span></td>
+                                            <td class="text-end">{{ r.points }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% elif period %}
+        <p class="text-muted mt-4">
+            Noch keine Rangliste für diesen Zeitraum berechnet.
+            {% if request.user.is_staff %}
+                <a href="{% url 'austria_ranking_run' period.pk %}">Jetzt berechnen</a>
+            {% endif %}
+        </p>
+    {% else %}
+        <p class="text-muted mt-4">Kein aktueller Quota-Zeitraum konfiguriert.</p>
+    {% endif %}
+</div>
+{% endblock %}

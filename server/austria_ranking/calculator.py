@@ -1,0 +1,89 @@
+# -*- coding: utf-8 -*-
+"""
+Austrian riichi ranking calculation engine.
+
+Formula (from ranking-calculator/calculators/ranking_austria_riichi.py):
+  points = round(1000 / player_count * (player_count - position + 1))
+  A result of 0 (last place) is discarded.
+
+Final score per player:
+  AT score     = sum of points for all Austrian tournaments
+  foreign score = sum of top-3 points for non-Austrian tournaments
+  total         = AT score + foreign score
+"""
+
+from austria_ranking.models import AustrianRanking, EmaTournamentResult
+from player.models import Player
+
+
+def calculate_points(player_count: int, position: int) -> int:
+    """Return the ranking points for a given tournament result."""
+    return round(1000 / player_count * (player_count - position + 1))
+
+
+def rank_players_for_period(quota_period) -> list[dict]:
+    """
+    Calculate and persist AustrianRanking rows for the given QuotaPeriod.
+
+    Returns the sorted ranking list as a list of dicts (for immediate use in views/admin).
+    """
+    results = EmaTournamentResult.objects.filter(quota_period=quota_period, points__gt=0)
+
+    # Group by ema_id
+    player_data: dict[str, dict] = {}
+    for r in results:
+        if r.ema_id not in player_data:
+            player_data[r.ema_id] = {
+                "ema_id": r.ema_id,
+                "display_name": f"{r.first_name} {r.last_name}",
+                "at_results": [],
+                "foreign_results": [],
+            }
+        if r.is_austrian_tournament:
+            player_data[r.ema_id]["at_results"].append({"name": r.tournament_name, "points": r.points})
+        else:
+            player_data[r.ema_id]["foreign_results"].append({"name": r.tournament_name, "points": r.points})
+
+    # Build player → portal Player lookup by ema_id
+    ema_ids = list(player_data.keys())
+    player_lookup: dict[str, Player] = {
+        p.ema_id: p for p in Player.objects.filter(ema_id__in=ema_ids) if p.ema_id
+    }
+
+    # Score each player
+    rankings = []
+    for ema_id, data in player_data.items():
+        at_points = sum(r["points"] for r in data["at_results"])
+        top3_foreign = sorted(data["foreign_results"], key=lambda x: x["points"], reverse=True)[:3]
+        foreign_points = sum(r["points"] for r in top3_foreign)
+        total_points = at_points + foreign_points
+        rankings.append(
+            {
+                "ema_id": ema_id,
+                "display_name": data["display_name"],
+                "at_points": at_points,
+                "foreign_points": foreign_points,
+                "total_points": total_points,
+                "at_results": data["at_results"],
+                "foreign_results": top3_foreign,
+                "portal_player": player_lookup.get(ema_id),
+            }
+        )
+
+    rankings.sort(key=lambda x: x["total_points"], reverse=True)
+
+    # Persist to AustrianRanking, replacing any existing rows for this period
+    AustrianRanking.objects.filter(quota_period=quota_period).delete()
+    for pos, row in enumerate(rankings, start=1):
+        AustrianRanking.objects.create(
+            quota_period=quota_period,
+            player=row["portal_player"],
+            ema_id=row["ema_id"],
+            display_name=row["display_name"],
+            rank_position=pos,
+            total_points=row["total_points"],
+            at_points=row["at_points"],
+            foreign_points=row["foreign_points"],
+        )
+
+    return rankings

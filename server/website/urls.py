@@ -12,6 +12,8 @@ from website.views import (
     home,
     iormc_2018,
     online_tournament_rules,
+    rangliste,
+    rangliste_period,
     rating_faq,
     search,
     server,
@@ -22,6 +24,8 @@ from website.views import (
 urlpatterns = [
     url(r"^$", home, name="home"),
     url(r"^about/$", about, name="about"),
+    url(r"^rangliste/$", rangliste, name="rangliste"),
+    url(r"^rangliste/(?P<pk>\d+)/$", rangliste_period, name="rangliste_period"),
     url(r"^iormc/2018/$", iormc_2018, name="iormc_2018"),
     url(r"^ermc/2019/$", ermc_qualification_2019, name="ermc_qualification_2019"),
     url(r"^wrc/2020/$", wrc_qualification_2020, name="wrc_qualification_2020"),

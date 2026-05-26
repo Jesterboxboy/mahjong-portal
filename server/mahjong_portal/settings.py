@@ -37,6 +37,8 @@ DEBUG = os.environ.get("DEBUG", "").lower() == "true"
 AUTO_BOT_TOKEN = os.environ.get("AUTO_BOT_TOKEN", None)
 EXTERNAL_QUERY_SECRET = os.environ.get("EXTERNAL_QUERY_SECRET", None)
 
+EMA_RANKING_URL = os.environ.get("EMA_RANKING_URL", "http://mahjong-europe.org/ranking/")
+
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -77,6 +79,8 @@ INSTALLED_APPS = [
     "ema",
     "league",
     "yagi_keiji_cup",
+    "news",
+    "austria_ranking",
 ]
 
 MIDDLEWARE = [
@@ -136,8 +140,8 @@ DATABASE_ROUTERS = ["club.pantheon_games.db_router.PantheonRouter"]
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
-LANGUAGE_CODE = "en"
-LANGUAGES = [["en", "English"], ["de", "German"]]
+LANGUAGE_CODE = "de"
+LANGUAGES = [["de", "German"], ["en", "English"]]
 
 LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
 
