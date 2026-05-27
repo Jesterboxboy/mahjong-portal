@@ -27,6 +27,7 @@
                         {% bootstrap_field form.tournament_name %}
                         {% bootstrap_field form.tournament_type %}
                         {% bootstrap_field form.city %}
+                        {% bootstrap_field form.country %}
                         {% bootstrap_field form.address %}
                     </div>
                 </li>
@@ -47,7 +48,6 @@
                 </li>
             </ul>
 
-
             <ul class="list-group mb-4">
                 <li class="list-group-item list-group-item-info">{% trans 'Dates' %}</li>
                 <li class="list-group-item">
@@ -58,13 +58,48 @@
                 </li>
             </ul>
 
+            {# Tournament Info Tab — bilingual (DE / EN) #}
+            <ul class="list-group mb-4">
+                <li class="list-group-item list-group-item-info">{% trans 'Tournament info (bilingual)' %}</li>
+                <li class="list-group-item">
+                    <ul class="nav nav-tabs mb-3" id="infoLangTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="info-de-tab" data-bs-toggle="tab"
+                                    data-bs-target="#info-de" type="button" role="tab">
+                                Deutsch
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="info-en-tab" data-bs-toggle="tab"
+                                    data-bs-target="#info-en" type="button" role="tab">
+                                English
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="infoLangTabsContent">
+                        <div class="tab-pane fade show active" id="info-de" role="tabpanel">
+                            {% bootstrap_field form.venue_address_de %}
+                            {% bootstrap_field form.schedule_de %}
+                            {% bootstrap_field form.lunch_options_de %}
+                            {% bootstrap_field form.contact_info_de %}
+                        </div>
+                        <div class="tab-pane fade" id="info-en" role="tabpanel">
+                            {% bootstrap_field form.venue_address_en %}
+                            {% bootstrap_field form.schedule_en %}
+                            {% bootstrap_field form.lunch_options_en %}
+                            {% bootstrap_field form.contact_info_en %}
+                        </div>
+                    </div>
+                </li>
+            </ul>
+
             <ul class="list-group mb-4">
                 <li class="list-group-item list-group-item-info">{% trans 'Organizer' %}</li>
                 <li class="list-group-item">
                     <div class="table-responsive-sm">
                         {% bootstrap_field form.organizer_name %}
+                        {% bootstrap_field form.organizer_email %}
                         {% bootstrap_field form.organizer_phone %}
-                        {% bootstrap_field form.organizer_additional_contact %}
                         {% if user.is_authenticated %}
                             {% bootstrap_field form.is_admin_myself %}
                         {% endif %}
@@ -77,8 +112,8 @@
                 <li class="list-group-item">
                     <div class="table-responsive-sm">
                         {% bootstrap_field form.referee_name %}
+                        {% bootstrap_field form.referee_email %}
                         {% bootstrap_field form.referee_phone %}
-                        {% bootstrap_field form.referee_additional_contact %}
                         {% bootstrap_field form.referee_english %}
                     </div>
                 </li>

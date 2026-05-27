@@ -111,10 +111,11 @@ class MajsoulOnlineTournamentPantheonRegistrationForm(forms.ModelForm):
 class TournamentApplicationForm(forms.ModelForm):
     allow_to_save_data = forms.BooleanField(required=True)
     is_admin_myself = forms.BooleanField(required=False)
+    required_css_class = "required-field"
 
     class Meta:
         model = TournamentApplication
-        exclude = []
+        exclude = ["tournament_admin_user"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -460,8 +460,12 @@ class MsOnlineTournamentRegistration(BaseModel):
 class TournamentApplication(BaseModel):
     tournament_name = models.CharField(max_length=255, verbose_name=_("Tournament name"))
     city = models.CharField(max_length=255, verbose_name=_("City"))
-    tournament_type = models.PositiveSmallIntegerField(
-        verbose_name=_("Tournament type"), choices=[[0, "CRR"], [1, "RR"], [2, "EMA"], [3, "OTHER"]], default=0
+    country = models.CharField(max_length=255, verbose_name=_("Country"), null=True, blank=True)
+    tournament_type = models.CharField(
+        max_length=10,
+        verbose_name=_("Tournament type"),
+        choices=[["ema", "EMA"], ["other", "Other"], ["online", "Online"]],
+        default="ema",
     )
     start_date = models.CharField(max_length=255, verbose_name=_("Start date"))
     end_date = models.CharField(
@@ -476,24 +480,40 @@ class TournamentApplication(BaseModel):
         null=True, blank=True, verbose_name=_("Link to additional tournament information")
     )
 
+    venue_address_de = models.TextField(null=True, blank=True, verbose_name=_("Venue & address (DE)"))
+    venue_address_en = models.TextField(null=True, blank=True, verbose_name=_("Venue & address (EN)"))
+    schedule_de = models.TextField(null=True, blank=True, verbose_name=_("Schedule / Itinerary (DE)"))
+    schedule_en = models.TextField(null=True, blank=True, verbose_name=_("Schedule / Itinerary (EN)"))
+    lunch_options_de = models.TextField(null=True, blank=True, verbose_name=_("Lunch options (DE)"))
+    lunch_options_en = models.TextField(null=True, blank=True, verbose_name=_("Lunch options (EN)"))
+    contact_info_de = models.TextField(null=True, blank=True, verbose_name=_("Contact information (DE)"))
+    contact_info_en = models.TextField(null=True, blank=True, verbose_name=_("Contact information (EN)"))
+
     organizer_name = models.CharField(max_length=255, verbose_name=_("Organizer name"))
-    organizer_phone = models.CharField(max_length=255, verbose_name=_("Organizer phone"))
-    organizer_additional_contact = models.CharField(
+    organizer_email = models.EmailField(
         max_length=255,
-        verbose_name=_("Organizer additional contact"),
+        verbose_name=_("Organizer email"),
+        null=True,
+    )
+    organizer_phone = models.CharField(
+        max_length=255,
+        verbose_name=_("Organizer phone"),
         null=True,
         blank=True,
-        help_text=_("Email, link to vk or something else"),
     )
 
-    referee_name = models.CharField(max_length=255, verbose_name=_("Referee name"))
-    referee_phone = models.CharField(max_length=255, verbose_name=_("Referee phone"))
-    referee_additional_contact = models.CharField(
+    referee_name = models.CharField(max_length=255, verbose_name=_("Referee name"), null=True, blank=True)
+    referee_email = models.EmailField(
         max_length=255,
-        verbose_name=_("Referee additional contact"),
+        verbose_name=_("Referee email"),
         null=True,
         blank=True,
-        help_text=_("Email, link to vk or something else"),
+    )
+    referee_phone = models.CharField(
+        max_length=255,
+        verbose_name=_("Referee phone"),
+        null=True,
+        blank=True,
     )
     referee_english = models.PositiveSmallIntegerField(
         choices=[[0, _("No")], [1, _("Yes")]], default=1, verbose_name=_("Referee english")
@@ -518,7 +538,7 @@ class TournamentApplication(BaseModel):
         choices=[[0, _("Open")], [1, _("Closed")], [2, _("Limited")]], verbose_name=_("Registration type"), default=0
     )
     additional_info = models.TextField(
-        verbose_name=_("Additional info"), help_text=_("More information about tournament")
+        verbose_name=_("Additional info"), help_text=_("More information about tournament"), null=True, blank=True
     )
     allow_to_save_data = models.BooleanField(help_text=_("I allow to store my personal data"))
     tournament_admin_user = models.ForeignKey("account.User", on_delete=models.SET_NULL, null=True, blank=True)
