@@ -9,13 +9,13 @@ from rating.models import ExternalRating, ExternalRatingDelta, Rating, RatingDat
 class RatingForm(forms.ModelForm):
     class Meta:
         model = Rating
-        exclude = ["name", "description"]
+        fields = ["name", "slug", "description", "type", "order"]
 
 
 class ExternalRatingForm(forms.ModelForm):
     class Meta:
         model = ExternalRating
-        exclude = ["name", "description"]
+        fields = ["name", "slug", "description", "type", "order", "is_hidden"]
 
 
 class RatingAdmin(admin.ModelAdmin):

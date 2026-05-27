@@ -10,7 +10,7 @@
 {% block main_class %}has-hero{% endblock %}
 
 {% block hero %}
-<div style="min-height:55vh; padding-top:80px; padding-bottom:3.5rem;
+<div style="min-height:35vh; padding-top:40px; padding-bottom:3.5rem;
             background: linear-gradient(rgba(20,10,35,.65), rgba(10,20,50,.72)),
                         url('{% static "img/banner.jpg" %}') center/cover no-repeat;
             display:flex; align-items:flex-end;">
@@ -44,7 +44,7 @@
                     <div class="d-flex gap-3 align-items-start">
                         <div class="home-feature-icon text-primary">🏆</div>
                         <div>
-                            <h6 class="mb-1">{% trans "Tournaments & Events" %}</h6>
+                            <h6 class="mb-1"><a href="{% url 'tournament_list' CURRENT_YEAR|default:2026 %}" class="text-decoration-none">{% trans "Tournaments" %}</a></h6>
                             <p class="text-muted small mb-0">{% trans "Current and upcoming national Riichi Mahjong tournaments and international events." %}</p>
                         </div>
                     </div>
@@ -62,7 +62,7 @@
                     <div class="d-flex gap-3 align-items-start">
                         <div class="home-feature-icon text-primary">🌍</div>
                         <div>
-                            <h6 class="mb-1">{% trans "EMA Member" %}</h6>
+                            <h6 class="mb-1"><a href="https://mahjong-europe.org/" target="_blank" rel="noopener">{% trans "EMA Member" %}</a></h6>
                             <p class="text-muted small mb-0">{% trans "The association is a member of the" %} <a href="https://mahjong-europe.org/" target="_blank" rel="noopener">European Mahjong Association</a>.</p>
                         </div>
                     </div>

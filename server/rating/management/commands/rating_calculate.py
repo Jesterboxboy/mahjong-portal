@@ -6,10 +6,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-from rating.calculation.crr import RatingCRRCalculation
 from rating.calculation.ema import RatingEMACalculation
 from rating.calculation.online import RatingOnlineCalculation
-from rating.calculation.rr import RatingRRCalculation
 from rating.models import Rating, RatingDate, RatingDelta, RatingResult
 from tournament.models import Tournament, TournamentResult
 
@@ -35,8 +33,6 @@ class Command(BaseCommand):
         today = datetime.datetime.now().date()
 
         rating_options = {
-            "rr": {"calculator": RatingRRCalculation, "rating_type": Rating.RR},
-            "crr": {"calculator": RatingCRRCalculation, "rating_type": Rating.CRR},
             "online": {"calculator": RatingOnlineCalculation, "rating_type": Rating.ONLINE},
             "ema": {"calculator": RatingEMACalculation, "rating_type": Rating.EMA},
         }
@@ -51,14 +47,31 @@ class Command(BaseCommand):
         calculator = rating_data["calculator"]()
         rating_date = calculator.get_date(today)
         rating = Rating.objects.get(type=rating_data["rating_type"])
+
+        print("Today =", today)
+        print("Rating date =", rating_date)
+
+        # Scraper-based calculators (e.g. EMA) don't use tournament dates —
+        # they always refresh for today.
+        if getattr(calculator, "USE_SCRAPER", False):
+            print("Scraper-based calculation — refreshing for today ({})...".format(today))
+            with transaction.atomic():
+                if from_zero:
+                    print("Erasing previous data...")
+                    RatingDate.objects.filter(rating=rating).delete()
+                    RatingResult.objects.filter(rating=rating).delete()
+                RatingDate.objects.filter(rating=rating, date=today).delete()
+                RatingResult.objects.filter(rating=rating, date=today).delete()
+                RatingDate.objects.create(rating=rating, date=today)
+                calculator.calculate_players_rating_rank(rating, today)
+            print("{0}: End".format(get_date_string()))
+            return
+
         tournaments = (
             Tournament.public.filter(tournament_type__in=calculator.TOURNAMENT_TYPES)
             .filter(is_upcoming=False)
             .order_by("end_date")
         )
-
-        print("Today =", today)
-        print("Rating date =", rating_date)
 
         if specified_date:
             specified_date = datetime.datetime.strptime(specified_date, "%Y-%m-%d").date()

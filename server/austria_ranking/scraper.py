@@ -99,6 +99,66 @@ def scrape_at_players() -> list[dict]:
     return players
 
 
+def scrape_at_ranking() -> list[dict]:
+    """
+    Fetch the Austrian EMA RCR ranking including EMA points totals.
+
+    Returns a list of dicts:
+        {ema_id, first_name, last_name, ema_rank (int), total_points (int)}
+    sorted by total_points descending (i.e. Austrian rank by total score).
+
+    Column indices inside each .TCTT_ligne row (per the HTML structure above):
+      p[0]: EMA global rank
+      p[2]: EMA ID
+      p[3]: last name
+      p[4]: first name
+      p[6]: total EMA points
+    """
+    url = f"{URLBASE}Country/AUT_RCR.html"
+    logger.info("Fetching AT ranking from %s", url)
+    try:
+        soup = _get(url)
+    except Exception as exc:
+        logger.error("Failed to fetch AT ranking page: %s", exc)
+        return []
+
+    entries = []
+    try:
+        lignes = soup.find("div", class_="TCTT_lignes")
+        rows = lignes.find_all("div", class_=re.compile(r"^TCTT_ligne"))
+        for row in rows[1:]:  # skip header row
+            p_tags = row.find_all("p")
+            if len(p_tags) < 7:
+                continue
+            ema_id = p_tags[2].get_text(strip=True)
+            if not ema_id.isdigit():
+                continue
+            ema_rank_str = p_tags[0].get_text(strip=True)
+            last_name = p_tags[3].get_text(strip=True).title()
+            first_name = p_tags[4].get_text(strip=True).title()
+            total_str = re.sub(r"[^\d]", "", p_tags[6].get_text(strip=True))
+            try:
+                total_points = int(total_str) if total_str else 0
+                ema_rank = int(ema_rank_str) if ema_rank_str.isdigit() else 0
+            except ValueError:
+                continue
+            entries.append(
+                {
+                    "ema_id": ema_id,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "ema_rank": ema_rank,
+                    "total_points": total_points,
+                }
+            )
+    except Exception as exc:
+        logger.error("Error parsing AT ranking page: %s", exc)
+
+    entries.sort(key=lambda x: x["total_points"], reverse=True)
+    logger.info("Found %d AT ranking entries", len(entries))
+    return entries
+
+
 def scrape_player_results(ema_id: str, start_date, end_date) -> list[dict]:
     """
     Fetch riichi EMA tournament results for one player, filtered to the quota period.

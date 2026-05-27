@@ -10,7 +10,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
 
 from player.models import Player
-from settings.models import Country
 from system.ema_players_admin.forms import AddPlayerForm
 
 
@@ -32,7 +31,7 @@ def download_players_list_csv(request):
     writer = csv.writer(content)
     writer.writerow(["EMA_NUMBER", "LAST_NAME", "FIRST_NAME", "COUNTRY"])
     for player in players:
-        writer.writerow([player.ema_id, player.last_name.upper(), player.first_name.upper(), "RUS : Russia"])
+        writer.writerow([player.ema_id, player.last_name.upper(), player.first_name.upper(), player.country.code if player.country else ""])
 
     response = HttpResponse(content.getvalue(), content_type="text/x-csv")
     response["Content-Disposition"] = "attachment; filename=ema_players.csv"
@@ -59,7 +58,6 @@ def add_new_player(request):
         form = AddPlayerForm(request.POST)
         if form.is_valid():
             player = form.save(commit=False)
-            player.country = Country.objects.get(code="RU")
             player.ema_id = player.latest_ema_id + 1
             player.slug = slugify("{} {}".format(player.last_name, player.first_name))
             player.save()

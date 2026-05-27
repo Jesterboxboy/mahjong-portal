@@ -121,6 +121,9 @@ def get_rating_details(request, slug, year=None, month=None, day=None, country_c
     if not rating_date:
         today, rating_date = get_latest_rating_date(rating)
 
+    if not rating_date:
+        raise Http404
+
     is_ema = rating.type == Rating.EMA
     rating_results = (
         RatingResult.objects.filter(rating=rating)
@@ -235,6 +238,8 @@ def rating_tournaments(request, slug):
 
     rating = get_object_or_404(Rating, slug=slug)
     today, rating_date = get_latest_rating_date(rating)
+    if not rating_date:
+        raise Http404
     tournament_ids = (
         RatingDelta.objects.filter(date=rating_date)
         .filter(rating=rating)

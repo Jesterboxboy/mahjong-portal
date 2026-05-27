@@ -109,3 +109,56 @@ The option should be in the dropdown of Aktion and should create a tournament dr
   - Creates `Tournament` with `is_upcoming=True` (draft); saves
   - Shows success message and redirects to the new Tournament's admin change page
 - `TournamentApplicationAdmin.actions = [create_tournament_from_application]`
+
+# Improvement 5 ✓ DONE
+http://localhost:8060/admin/rating/rating/2/change/
+still shows de and en names, please remove these and all dependencies so its only showing one name field
+
+### Implementation
+
+**`rating/translation.py`**
+- Removed `translator.register(Rating, ...)` and `translator.register(ExternalRating, ...)` — both models now use plain `name`/`description` without language variants.
+
+**`rating/admin.py`**
+- `RatingForm`: changed `exclude = ["name", "description"]` → `fields = ["name", "slug", "description", "type", "order"]`
+- `ExternalRatingForm`: changed `exclude = ["name", "description"]` → `fields = ["name", "slug", "description", "type", "order", "is_hidden"]`
+
+**`rating/migrations/0022_remove_rating_translation_fields.py`**
+- `RunSQL` to copy `name_de → name` and `description_de → description` (German was the default language)
+- `RemoveField` for `name_de`, `name_en`, `description_de`, `description_en` on both `rating` and `externalrating` tables
+
+# Improvement 6 ✓ DONE
+i want the EMA ranking to be populated by the information from http://mahjong-europe.org/ranking/Country/AUT_RCR.html
+with the fields first name, last name, Total, EMA Ranking, but sorted by Total instead of the ranking calculator based on all ema tournaments in the system, but so that calling
+40 1 * * * python /app/manage.py rating_calculate ema in the crontab still updates these values
+
+use the scraper from the austrian_ranking app for that.
+
+### Implementation
+
+**`austria_ranking/scraper.py`**
+- Added `scrape_at_ranking()` function: fetches `AUT_RCR.html`, parses `p[0]` (EMA global rank), `p[2]` (EMA ID), `p[3]` (last name), `p[4]` (first name), `p[6]` (total points)
+- Returns list of `{ema_id, first_name, last_name, ema_rank, total_points}` sorted by `total_points` descending
+
+**`rating/calculation/ema.py`**
+- Completely rewrote `RatingEMACalculation` — no longer inherits from `RatingRRCalculation`/`RatingDatesMixin`
+- `USE_SCRAPER = True` class attribute signals the command to use today-only refresh
+- `calculate_players_rating_rank(rating, rating_date)`: calls `scrape_at_ranking()`, matches players by `ema_id`, creates `RatingResult` rows with `score=total_points`, `place` = rank by total, `rating_calculation` = EMA global rank string
+
+**`rating/management/commands/rating_calculate.py`**
+- Added `USE_SCRAPER` check after building the calculator: if True, skips tournament date scanning and instead clears+recreates `RatingDate`/`RatingResult` for today, then calls `calculate_players_rating_rank`
+- `from_zero` flag still works: clears all historical data before refreshing
+
+# Improvement 7 ✓ DONE
+Run a nightly calculation for every QuotaEvent that is current in the Austrian rankings.
+There are already "Run Calculation" buttons in http://localhost:8060/admin/austria_ranking/quotaevent/ — reuse that logic.
+
+### Implementation
+
+**`austria_ranking/management/commands/calculate_austrian_ranking.py`** (new)
+- Queries `QuotaEvent.objects.filter(is_current=True)`
+- For each: calls `scraper.run_full_scrape(period)` then `calculator.rank_players_for_period(period)` and updates `period.calculated_at` — identical to what the admin "Run Calculation" button does
+
+**`docker/django/crontab`**
+- Added `50 1 * * * python /app/manage.py calculate_austrian_ranking` (runs at 01:50, after the EMA rating job)
+

@@ -5,10 +5,9 @@
 # */50 * * * * python /app/manage.py update_index --age 1
 
 # once a day
-10 1 * * * python /app/manage.py rating_calculate rr
-20 1 * * * python /app/manage.py rating_calculate crr
 30 1 * * * python /app/manage.py rating_calculate online
-# 40 1 * * * python /app/manage.py rating_calculate ema
+40 1 * * * python /app/manage.py rating_calculate ema
+50 1 * * * python /app/manage.py calculate_austrian_ranking
 
 # once a day
 # 10 0 * * * python /app/manage.py associate_players_with_club

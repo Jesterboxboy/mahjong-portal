@@ -54,7 +54,7 @@
                     <a class="nav-link" href="{% url 'club_list' %}">{% trans "Clubs" %}</a>
                 </li>
                 <li class="nav-item {% if page == 'rangliste' %}active{% endif %}">
-                    <a class="nav-link" href="/rangliste/">{% trans "Rankings" %}</a>
+                    <a class="nav-link" href="/rangliste/">{% trans "Quali-Events" %}</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarSonstigesDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -103,7 +103,6 @@
                             {% if user.is_superuser %}
                                 <a class="dropdown-item" href="{% url 'admin:index' %}">{% trans 'Django admin' %}</a>
                                 <a class="dropdown-item" href="{% url 'new_tournaments' %}">{% trans 'New tournaments' %}</a>
-                                <a class="dropdown-item" href="{% url 'transliterate_text' %}">Transliterate</a>
                                 <div class="dropdown-divider"></div>
                             {% endif %}
                             <a class="dropdown-item" href="{% url 'account_settings' %}">{% trans 'My Profile' %}</a>
