@@ -22,7 +22,7 @@ from django.views.decorators.http import require_POST
 from haystack.forms import ModelSearchForm
 
 from account.models import PantheonInfoUpdateLog, User
-from austria_ranking.models import AustrianRanking, EmaTournamentResult, QuotaPeriod
+from austria_ranking.models import AustrianRanking, EmaTournamentResult, EventAttendanceIntent, QuotaEvent
 from club.models import Club
 from news.models import NewsArticle
 from player.models import Player, PlayerQuotaEvent
@@ -97,14 +97,43 @@ def _annotate_used_foreign(rankings, period):
         ranking.used_foreign_pks = top3_by_player.get(ranking.ema_id, set())
 
 
+def _annotate_attendance(rankings, period):
+    """Attach attendance_status and has_seat to each ranking row."""
+    intents = (
+        EventAttendanceIntent.objects.filter(quota_period=period)
+        .exclude(status=EventAttendanceIntent.UNKNOWN)
+        .select_related("user__attached_player")
+    )
+    attendance_map = {}
+    for intent in intents:
+        player = intent.user.attached_player
+        if player and player.ema_id:
+            attendance_map[player.ema_id] = intent.status
+
+    # Determine which players have a guaranteed seat (first seats_available
+    # confirmed-attending players, ordered by rank_position ascending).
+    seated_ema_ids: set[str] = set()
+    if period.seats_available:
+        attending_by_rank = sorted(
+            (r for r in rankings if attendance_map.get(r.ema_id) == EventAttendanceIntent.ATTENDING),
+            key=lambda r: r.rank_position,
+        )
+        seated_ema_ids = {r.ema_id for r in attending_by_rank[: period.seats_available]}
+
+    for ranking in rankings:
+        ranking.attendance_status = attendance_map.get(ranking.ema_id, EventAttendanceIntent.UNKNOWN)
+        ranking.has_seat = ranking.ema_id in seated_ema_ids
+
+
 def rangliste(request):
-    current_period = QuotaPeriod.objects.filter(is_current=True).first()
-    all_periods = QuotaPeriod.objects.all()
+    current_period = QuotaEvent.objects.filter(is_current=True).first()
+    all_periods = QuotaEvent.objects.all()
 
     rankings = []
     if current_period:
         rankings = list(AustrianRanking.objects.filter(quota_period=current_period).select_related("player"))
         _annotate_used_foreign(rankings, current_period)
+        _annotate_attendance(rankings, current_period)
 
     return render(
         request,
@@ -119,10 +148,11 @@ def rangliste(request):
 
 
 def rangliste_period(request, pk: int):
-    period = get_object_or_404(QuotaPeriod, pk=pk)
-    all_periods = QuotaPeriod.objects.all()
+    period = get_object_or_404(QuotaEvent, pk=pk)
+    all_periods = QuotaEvent.objects.all()
     rankings = list(AustrianRanking.objects.filter(quota_period=period).select_related("player"))
     _annotate_used_foreign(rankings, period)
+    _annotate_attendance(rankings, period)
 
     return render(
         request,
@@ -484,19 +514,19 @@ def export_tournament_results(request, tournament_id):
 
         rows.append(
             [
-                "{} {}".format(tournament.name_en, tournament.end_date.year),
+                "{} {}".format(tournament.name, tournament.end_date.year),
                 tournament.get_players_count(),
                 result.place,
-                player.first_name_en,
-                player.last_name_en.upper(),
+                player.first_name,
+                player.last_name.upper(),
                 player.ema_id or "",
                 "1",
                 result.scores,
                 player.ema_id and "YES" or "",
-                player.country and player.country.name_en == "Russia" and "RUS" or "",
+                player.country and player.country.name == "Russia" and "RUS" or "",
                 tournament.end_date.strftime("%d.%m.%Y"),
                 "RUS",
-                tournament.city.name_en,
+                tournament.city.name if tournament.city else "",
                 "",
                 "",
                 "Riichi",
@@ -509,7 +539,7 @@ def export_tournament_results(request, tournament_id):
     for x in rows:
         writer.writerow(x)
 
-    file_name = slugify("{} {} results".format(tournament.name_en, tournament.end_date.year))
+    file_name = slugify("{} {} results".format(tournament.name, tournament.end_date.year))
 
     response = HttpResponse(content.getvalue(), content_type="text/plain")
     response["Content-Disposition"] = "attachment; filename={}.csv".format(file_name)

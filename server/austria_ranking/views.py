@@ -7,14 +7,14 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from austria_ranking.models import QuotaPeriod
+from austria_ranking.models import QuotaEvent
 
 logger = logging.getLogger(__name__)
 
 
 @staff_member_required
 def run_ranking_calculation(request, pk: int):
-    period = get_object_or_404(QuotaPeriod, pk=pk)
+    period = get_object_or_404(QuotaEvent, pk=pk)
 
     if request.method == "POST":
         from austria_ranking import calculator, scraper
@@ -42,6 +42,6 @@ def run_ranking_calculation(request, pk: int):
 
             messages.error(request, f"Error during calculation: {exc}")
 
-        return redirect("admin:austria_ranking_quotaperiod_changelist")
+        return redirect("admin:austria_ranking_quotaevent_changelist")
 
     return render(request, "austria_ranking/confirm_run.html", {"period": period})

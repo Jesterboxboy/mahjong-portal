@@ -9,12 +9,12 @@ from club.models import Club
 class ClubForm(forms.ModelForm):
     class Meta:
         model = Club
-        exclude = ["name"]
+        exclude = []
 
 
 class ClubAdmin(admin.ModelAdmin):
     form = ClubForm
-    prepopulated_fields = {"slug": ["name_en"]}
+    prepopulated_fields = {"slug": ["name"]}
 
     list_display = ["name", "city"]
     search_fields = ["name"]
@@ -26,8 +26,7 @@ class ClubAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": [
-                    "name_de",
-                    "name_en",
+                    "name",
                     "slug",
                     "description_de",
                     "description_en",

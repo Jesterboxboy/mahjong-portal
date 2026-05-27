@@ -117,6 +117,26 @@ This page lists all Austrian riichi players with EMA IDs. The existing `scrape_a
 - Member auth accounts — users register fresh via mahjong-portal or Pantheon SSO
 - News articles / event descriptions — entered manually via the news admin
 
+## Phase 6: Event Attendance Intent
+
+Allow logged-in users to indicate whether they intend to attend the qualifying event for each quota period. Their ranking row is then colour-coded for all visitors.
+
+### 6a: Data Model (`austria_ranking/models.py`)
+28. `EventAttendanceIntent`: `user` FK → `account.User`, `quota_period` FK → `QuotaPeriod`, `status` CharField with choices `yes` / `no` / `unknown` (default `unknown`). `unique_together = [(user, quota_period)]`.
+29. Migration `0003_event_attendance_intent.py`.
+
+### 6b: Attendance toggle endpoint (`account/views.py` + `account/urls.py`)
+30. View `set_attendance_intent(request, period_pk)` — `@login_required @require_POST`. Reads `status` from POST body (validated against allowed choices). Calls `EventAttendanceIntent.objects.update_or_create(user=request.user, quota_period=period, defaults={"status": status})`. Redirects back to `account_settings`.
+31. URL `POST /account/attendance/<int:period_pk>/` named `set_attendance_intent`.
+
+### 6c: Account Settings section (`account/views.py` + `settings.html`)
+32. In `account_settings` view: query all `QuotaPeriod` objects and the user's existing `EventAttendanceIntent` rows; pass `attendance_data = [(period, status_or_unknown)]` to template.
+33. In `settings.html`: new section "Turnierteilnahme / Event Attendance". For each quota period render a Bootstrap button group with three buttons (✓ green, ? grey, ✗ red). The active choice is highlighted. Each button submits a small `<form method="post">` to `set_attendance_intent`. Only shown when user is authenticated.
+
+### 6d: Rangliste row colouring (`website/views.py` + `rangliste.html`)
+34. In both `rangliste` and `rangliste_period` views: load all `EventAttendanceIntent` rows for the period; build `{ema_id: status}` map (via `user.attached_player.ema_id`); annotate each `AustrianRanking` object with `attendance_status`.
+35. In `rangliste.html`: apply `style="background-color:#e8f5e9"` (very light green) for `attendance_status == "yes"` and `style="background-color:#ffebee"` (very light red) for `"no"`. Also render a small status icon (✓ / ✗ / nothing) after the player name.
+
 ## Verification
 1. Run `python manage.py sync_at_players_from_ema --dry-run`; verify expected player list printed
 2. Run without `--dry-run`; check `Player.objects.filter(country__code='AT').count()` matches EMA list

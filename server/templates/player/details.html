@@ -1,347 +1,294 @@
 {% extends 'base.html' %}
 {% load i18n russian_words_morph meta_tags_helper tz tenhou_helper player_helper %}
 
-{% block title %}
-    {{ player.full_name }}
-{% endblock %}
+{% block title %}{{ player.full_name }}{% endblock %}
 
 {% block content %}
-    <div>
-        {% for message in messages %}
-            <div class="alert alert-success">
-                {{ message }}
+{% for message in messages %}
+<div class="alert alert-success">{{ message }}</div>
+{% endfor %}
+
+<div class="row g-4 mt-2">
+
+    {# ── Player Info ──────────────────────────────────────────────────── #}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.029 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/></svg>
+                <strong>{{ player.full_name }}</strong>
+                {% if request.user.is_authenticated and request.user.attached_player_id == player.id %}
+                    <span class="badge bg-light text-primary ms-2">{% trans "It's me!" %}</span>
+                {% endif %}
             </div>
-        {% endfor %}
-
-        {% include 'player/_player_header.html' %}
-
-        {% if rating_results or external_rating_results %}
-            <h4>{% trans 'Ratings' %}</h4>
-            <p>{% trans 'Table with all ratings where a player was counted' %}</p>
-
-            <div class="table-responsive-sm">
-                <table class="table table-hover" style="max-width: 450px">
-                    <thead>
-                    <tr>
-                        <th scope="col">{% trans 'Rating' %}</th>
-                        <th scope="col">{% trans 'Place' %}</th>
-                        <th scope="col">{% trans 'Scores' %}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for rating_result in rating_results %}
-                        <tr>
-                            <td width="250px">
-                                {% if rating_date %}
-                                    <a href="{% url 'player_rating_details' player.slug rating_result.rating.slug rating_date.year rating_date.month rating_date.day %}">
-                                        {{ rating_result.rating.name }}
-                                    </a>
-                                {% else %}
-                                    <a href="{% url 'player_rating_details' player.slug rating_result.rating.slug %}">
-                                        {{ rating_result.rating.name }}
-                                    </a>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ rating_result.place }}
-                            </td>
-                            <td>
-                                {{ rating_result.score }}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    {% for external_rating_result in external_rating_results %}
-                        <tr>
-                            <td width="250px">
-                                {{ external_rating_result.rating.name|slice:":-14" }}
-                            </td>
-                            <td>
-                                {{ external_rating_result.place }}
-                            </td>
-                            <td>
-                                {{ external_rating_result.base_rank|floatformat:"3u" }}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endif %}
-
-        {% if tournament_results %}
-            <h4>{% trans 'Latest tournaments' %}</h4>
-            <p><a href="{% url 'player_tournaments' player.slug %}">{% trans 'all player tournaments' %}</a></p>
-
-            <div class="table-responsive-sm">
-                <table class="table table-hover">
-                    <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">{% trans 'Base rank' %}</th>
-                        <th scope="col" width="1ch"></th>
-                        <th scope="col">{% trans 'Place' %}</th>
-                        <th scope="col">{% trans 'Date' %}</th>
-                        <th scope="col">{% trans 'Type' %}</th>
-                        <th scope="col">{% trans 'Tournament' %}</th>
-                        <th scope="col">{% trans 'City' %}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for tournament_result in tournament_results %}
-                        <tr>
-                            <th scope="row">{{ forloop.counter }}</th>
-                            <td>
-                                {% if tournament_result.base_rank >= 750 %}
-                                    <span class="badge bg-success">{{ tournament_result.base_rank|floatformat:0 }}</span>
-                                {% elif tournament_result.base_rank >= 500 %}
-                                    <span class="badge bg-primary">{{ tournament_result.base_rank|floatformat:0 }}</span>
-                                {% elif tournament_result.base_rank >= 250 %}
-                                    <span class="badge bg-warning text-dark">{{ tournament_result.base_rank|floatformat:0 }}</span>
-                                {% else %}
-                                    <span class="badge bg-danger">{{ tournament_result.base_rank|floatformat:0 }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ tournament_result.place|place_medal|safe }}</td>
-                            <td>{{ tournament_result.place }}/{{ tournaments_data|get_item:tournament_result.tournament.id }}</td>
-                            <td>
-                                <nobr>{{ tournament_result.tournament.end_date|date:SHORT_DATE_FORMAT }}</nobr>
-                            </td>
-                            <td>
-                                {% with tournament_result.tournament as tournament %}
-                                    {% include 'tournament/_tournament_rating_type.html' %}
-                                {% endwith %}
-                            </td>
-                            <td><a href="{{ tournament_result.tournament.get_url }}">{{ tournament_result.tournament.name }}</a></td>
-                            <td>
-                                {% if tournament_result.tournament.city %}
-                                    <a href="{% url 'city_page' tournament_result.tournament.city.slug %}">{{ tournament_result.tournament.city.name }}</a>
-                                {% else %}
-                                    {{ tournament_result.tournament.country.name }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endif %}
-
-        {% if tenhou_data %}
-            <h4 id="tenhou" class="mt-4">{% trans 'Tenhou.net profile' %}</h4>
-            <p><a href="{% url 'player_tenhou_details' player.slug %}">{% trans 'more information' %}</a></p>
-
-            {% for tenhou_item in tenhou_data %}
-                {% with tenhou_item.four_players_aggregated_statistics as aggregated_stat %}
-                    <h5>{% trans 'Statistics for' %} {{ tenhou_item.tenhou_username }}</h5>
-                    <p class="mt-3">
-                        {% trans 'Rank' %}: {{ aggregated_stat.get_rank_display }}, {{ aggregated_stat.pt }} / {{ aggregated_stat.end_pt }}pt{% if aggregated_stat.rate %}, R{{ aggregated_stat.rate|display_rate }}{% endif %}
-                    </p>
-                    {% if tenhou_item.last_played_date %}
-                        <p>
-                            {% trans 'Last played date' %}: {{ tenhou_item.last_played_date|date:SHORT_DATE_FORMAT }}
-                        </p>
-                    {% endif %}
-
-                    {% with tenhou_item.prepare_latest_places as latest_games %}
-                        {% timezone 'Europe/Moscow' %}
-                            {% if latest_games %}
-                                <p>
-                                    {% trans 'Latest places:' %}<br>
-                                    {% for x in latest_games %}
-                                        {% if x.place == 1 %}
-                                            <span class="badge bg-success" title="{{ x.game_end_date }} UTC+3">{{ x.place }}</span>
-                                        {% elif x.place == 2 %}
-                                            <span class="badge bg-primary" title="{{ x.game_end_date }} UTC+3">{{ x.place }}</span>
-                                        {% elif x.place == 3 %}
-                                            <span class="badge bg-secondary" title="{{ x.game_end_date }} UTC+3">{{ x.place }}</span>
-                                        {% elif x.place == 4 %}
-                                            <span class="badge bg-danger" title="{{ x.game_end_date }} UTC+3">{{ x.place }}</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                </p>
-                            {% endif %}
-                        {% endtimezone %}
-                    {% endwith %}
-
-                    {% if aggregated_stat.month_played_games %}
-                        <h5>{% trans 'Current month' %}</h5>
-                        <p>
-                            {% trans 'Games' %}: {{ aggregated_stat.month_played_games }}, {% trans 'Avg. place' %}: {{ aggregated_stat.month_average_place }}, {% trans 'Last played date' %}: {{ tenhou_item.last_played_date|date:SHORT_DATE_FORMAT }}
-                        </p>
-                        <div class="table-responsive-sm">
-                            <table class="table table-hover mt-4">
-                                <thead>
-                                <tr>
-                                    <th scope="col">
-                                        {% trans 'Lobby' %}
-                                    </th>
-                                    <th scope="col">
-                                        {% trans 'Games' %}
-                                    </th>
-                                    <th scope="col">
-                                        <nobr>{% trans 'Avg. place' %}</nobr>
-                                    </th>
-                                    <th scope="col">
-                                        {% trans '1st' %}
-                                    </th>
-                                    <th scope="col">
-                                        {% trans '2nd' %}
-                                    </th>
-                                    <th scope="col">
-                                        {% trans '3rd' %}
-                                    </th>
-                                    <th scope="col">
-                                        {% trans '4th' %}
-                                    </th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for stat_item in tenhou_item.current_month_stat  %}
-                                    <tr>
-                                        <td>
-                                            {{ stat_item.get_lobby_display }}
-                                        </td>
-                                        <td>
-                                            {{ stat_item.played_games }}
-                                        </td>
-                                        <td>
-                                            {{ stat_item.average_place|floatformat:2 }}
-                                        </td>
-                                        <td>
-                                            {{ stat_item.first_place|floatformat:2 }}
-                                        </td>
-                                        <td>
-                                            {{ stat_item.second_place|floatformat:2 }}
-                                        </td>
-                                        <td>
-                                            {{ stat_item.third_place|floatformat:2 }}
-                                        </td>
-                                        <td>
-                                            {{ stat_item.fourth_place|floatformat:2 }}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% endif %}
-                {% endwith %}
-
-                {% with tenhou_item.latest_yakumans as yakumans %}
-                    {% if yakumans %}
-                        <h5>{% trans 'Collected yakumans' %}</h5>
-                        <table class="table table-hover mt-4" style="max-width: 550px">
-                            <thead>
-                            <tr>
-                                <th scope="col">{% trans 'Yakuman' %}</th>
-                                <th scope="col">{% trans 'Date' %}</th>
-                                <th scope="col">{% trans 'Log' %}</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for yakuman in yakumans %}
-                                <tr>
-                                    <td>
-                                        {{ yakuman.yakuman_names }}
-                                    </td>
-                                    <td>
-                                        {{ yakuman.date|date:SHORT_DATE_FORMAT }}
-                                    </td>
-                                    <td>
-                                        <a href="{{ yakuman.get_log_link }}" target="_blank">
-                                            {% trans 'link' %}
-                                        </a>
-                                    </td>
-                                </tr>
+            <div class="card-body">
+                {% with player.titles.all as titles %}
+                    {% if titles %}
+                        <p class="mb-2">
+                            {% for title in titles %}
+                                <span class="badge me-1" style="background-color: {{ title.background_color }}; color: {{ title.text_color }};">
+                                    {% if title.url %}<a style="color: {{ title.text_color }};" href="{{ title.url }}">{{ title.text }}</a>
+                                    {% else %}{{ title.text }}{% endif %}
+                                </span>
                             {% endfor %}
-                            </tbody>
-                        </table>
+                        </p>
                     {% endif %}
                 {% endwith %}
-            {% endfor %}
-        {% endif %}
 
-        {% if ms_data %}
-            <h4 id="ms" class="mt-4">{% trans 'Mahjong Soul profile' %}</h4>
-            <p><a href="{% url 'player_ms_details' player.slug %}">{% trans 'more information' %}</a></p>
-            <h5>{% trans 'Statistics for' %} {{ ms_data.account_name }}</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-3 text-muted">{% trans "From" %}</dt>
+                    <dd class="col-sm-9">
+                        {% if player.city %}
+                            <a href="{% url 'city_page' player.city.slug %}">{{ player.city.name }}</a>, {{ player.country.name }}
+                        {% else %}
+                            {{ player.country.name }}
+                        {% endif %}
+                    </dd>
 
-            {% with ms_data.four_players_statistics as stat %}
-                {% if stat %}
-                    <p class="mt-3">
-                        {% trans 'Four players' %}: {{ stat.get_rank_display }}, {{ stat.points }} / {{ stat.max_pt }}
-                    </p>
-                {% endif %}
-            {% endwith %}
+                    {% if player.ema_id %}
+                    <dt class="col-sm-3 text-muted">EMA</dt>
+                    <dd class="col-sm-9">
+                        <a href="http://mahjong-europe.org/ranking/Players/{{ player.ema_id }}.html" target="_blank">{{ player.ema_id }}</a>
+                    </dd>
+                    {% endif %}
 
-            {% with ms_data.three_players_statistics as stat %}
-                {% if stat %}
-                    <p class="mt-3">
-                        {% trans 'Sanma' %}: {{ stat.get_rank_display }}, {{ stat.points }} / {{ stat.max_pt }}
-                    </p>
-                {% endif %}
-            {% endwith %}
-        {% endif %}
+                    {% if player.pantheon_id %}
+                    <dt class="col-sm-3 text-muted">{% trans "Pantheon ID" %}</dt>
+                    <dd class="col-sm-9">
+                        <code>{{ player.pantheon_id }}</code>
+                        {% if request.user.is_authenticated and request.user.attached_player_id == player.id %}
+                            <span class="text-muted small ms-2">{% trans "(your account)" %}</span>
+                        {% endif %}
+                    </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
 
-        {% if club_ratings %}
-            <h4 class="mb-3 mt-4" id="club">{% trans 'Club statistics' %}</h4>
-            {% for item in club_ratings %}
-                <h5><a href="{% url 'club_details' item.club.slug %}#stat">{{ item.club.name }}</a></h5>
-                <p>{{ item.club.city }}</p>
-                <div class="table-responsive-sm">
-                    <table class="table table-hover mt-4">
-                        <thead>
-                        <tr>
-                            <th scope="col">
-                                {% trans 'Games' %}
-                            </th>
-                            <th scope="col">
-                                <nobr>{% trans 'Avg. place' %}</nobr>
-                            </th>
-                            <th scope="col">
-                                {% trans '1st' %}
-                            </th>
-                            <th scope="col">
-                                {% trans '2nd' %}
-                            </th>
-                            <th scope="col">
-                                {% trans '3rd' %}
-                            </th>
-                            <th scope="col">
-                                {% trans '4th' %}
-                            </th>
-                        </tr>
+    {# ── Ratings ──────────────────────────────────────────────────────── #}
+    {% if rating_results or external_rating_results %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white d-flex align-items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M0 0h1v15h15v1H0zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07z"/></svg>
+                <strong>{% trans "Ratings" %}</strong>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">{% trans "Rating" %}</th>
+                                <th>{% trans "Place" %}</th>
+                                <th>{% trans "Scores" %}</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        <tr>
-                            <td>
-                                {{ item.games_count }}
-                            </td>
-                            <td>
-                                {{ item.average_place|floatformat:2 }}
-                            </td>
-                            <td>
-                                {{ item.first_place|floatformat:2 }}
-                            </td>
-                            <td>
-                                {{ item.second_place|floatformat:2 }}
-                            </td>
-                            <td>
-                                {{ item.third_place|floatformat:2 }}
-                            </td>
-                            <td>
-                                {{ item.fourth_place|floatformat:2 }}
-                            </td>
-                        </tr>
+                        {% for rating_result in rating_results %}
+                            <tr>
+                                <td class="ps-3">
+                                    {% if rating_date %}
+                                        <a href="{% url 'player_rating_details' player.slug rating_result.rating.slug rating_date.year rating_date.month rating_date.day %}">{{ rating_result.rating.name }}</a>
+                                    {% else %}
+                                        <a href="{% url 'player_rating_details' player.slug rating_result.rating.slug %}">{{ rating_result.rating.name }}</a>
+                                    {% endif %}
+                                </td>
+                                <td>{{ rating_result.place }}</td>
+                                <td>{{ rating_result.score }}</td>
+                            </tr>
+                        {% endfor %}
+                        {% for external_rating_result in external_rating_results %}
+                            <tr>
+                                <td class="ps-3">{{ external_rating_result.rating.name|slice:":-14" }}</td>
+                                <td>{{ external_rating_result.place }}</td>
+                                <td>{{ external_rating_result.base_rank|floatformat:"3u" }}</td>
+                            </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
-            {% endfor %}
-        {% endif %}
+            </div>
+        </div>
     </div>
+    {% endif %}
+
+    {# ── Latest Tournaments ───────────────────────────────────────────── #}
+    {% if tournament_results %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-secondary text-white d-flex align-items-center justify-content-between">
+                <span class="d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/></svg>
+                    <strong>{% trans "Latest tournaments" %}</strong>
+                </span>
+                <a href="{% url 'player_tournaments' player.slug %}" class="btn btn-sm btn-light">{% trans "all player tournaments" %}</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>{% trans "Base rank" %}</th>
+                                <th>{% trans "Place" %}</th>
+                                <th>{% trans "Date" %}</th>
+                                <th>{% trans "Type" %}</th>
+                                <th>{% trans "Tournament" %}</th>
+                                <th>{% trans "City" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for tournament_result in tournament_results %}
+                            <tr>
+                                <td class="ps-3">{{ forloop.counter }}</td>
+                                <td>
+                                    {% if tournament_result.base_rank >= 750 %}
+                                        <span class="badge bg-success">{{ tournament_result.base_rank|floatformat:0 }}</span>
+                                    {% elif tournament_result.base_rank >= 500 %}
+                                        <span class="badge bg-primary">{{ tournament_result.base_rank|floatformat:0 }}</span>
+                                    {% elif tournament_result.base_rank >= 250 %}
+                                        <span class="badge bg-warning text-dark">{{ tournament_result.base_rank|floatformat:0 }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ tournament_result.base_rank|floatformat:0 }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ tournament_result.place|place_medal|safe }} {{ tournament_result.place }}/{{ tournaments_data|get_item:tournament_result.tournament.id }}</td>
+                                <td><nobr>{{ tournament_result.tournament.end_date|date:SHORT_DATE_FORMAT }}</nobr></td>
+                                <td>
+                                    {% with tournament_result.tournament as tournament %}
+                                        {% include 'tournament/_tournament_rating_type.html' %}
+                                    {% endwith %}
+                                </td>
+                                <td><a href="{{ tournament_result.tournament.get_url }}">{{ tournament_result.tournament.name }}</a></td>
+                                <td>
+                                    {% if tournament_result.tournament.city %}
+                                        <a href="{% url 'city_page' tournament_result.tournament.city.slug %}">{{ tournament_result.tournament.city.name }}</a>
+                                    {% else %}
+                                        {{ tournament_result.tournament.country.name }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Tenhou ───────────────────────────────────────────────────────── #}
+    {% if tenhou_data %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-dark text-white d-flex align-items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M15 8a6.97 6.97 0 0 0-1.71-4.584l-9.874 9.875A7 7 0 0 0 15 8M2.71 12.584l9.874-9.875a7 7 0 0 0-9.874 9.875ZM16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0"/></svg>
+                <strong>{% trans "Tenhou.net profile" %}</strong>
+                <a href="{% url 'player_tenhou_details' player.slug %}" class="btn btn-sm btn-outline-light ms-auto">{% trans "more information" %}</a>
+            </div>
+            <div class="card-body">
+            {% for tenhou_item in tenhou_data %}
+                {% with tenhou_item.four_players_aggregated_statistics as aggregated_stat %}
+                <h6 class="fw-semibold">{{ tenhou_item.tenhou_username }}</h6>
+                <p class="mb-1">
+                    {% trans "Rank" %}: {{ aggregated_stat.get_rank_display }}, {{ aggregated_stat.pt }} / {{ aggregated_stat.end_pt }}pt{% if aggregated_stat.rate %}, R{{ aggregated_stat.rate|display_rate }}{% endif %}
+                </p>
+                {% if tenhou_item.last_played_date %}
+                    <p class="mb-1 text-muted small">{% trans "Last played date" %}: {{ tenhou_item.last_played_date|date:SHORT_DATE_FORMAT }}</p>
+                {% endif %}
+                {% with tenhou_item.prepare_latest_places as latest_games %}
+                    {% timezone 'Europe/Moscow' %}
+                        {% if latest_games %}
+                            <p class="mb-1">
+                                {% trans "Latest places:" %}
+                                {% for x in latest_games %}
+                                    {% if x.place == 1 %}<span class="badge bg-success" title="{{ x.game_end_date }} UTC+3">{{ x.place }}</span>
+                                    {% elif x.place == 2 %}<span class="badge bg-primary" title="{{ x.game_end_date }} UTC+3">{{ x.place }}</span>
+                                    {% elif x.place == 3 %}<span class="badge bg-secondary" title="{{ x.game_end_date }} UTC+3">{{ x.place }}</span>
+                                    {% elif x.place == 4 %}<span class="badge bg-danger" title="{{ x.game_end_date }} UTC+3">{{ x.place }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </p>
+                        {% endif %}
+                    {% endtimezone %}
+                {% endwith %}
+                {% endwith %}
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Mahjong Soul ─────────────────────────────────────────────────── #}
+    {% if ms_data %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-dark text-white d-flex align-items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M15 8a6.97 6.97 0 0 0-1.71-4.584l-9.874 9.875A7 7 0 0 0 15 8M2.71 12.584l9.874-9.875a7 7 0 0 0-9.874 9.875ZM16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0"/></svg>
+                <strong>{% trans "Mahjong Soul profile" %}</strong>
+                <a href="{% url 'player_ms_details' player.slug %}" class="btn btn-sm btn-outline-light ms-auto">{% trans "more information" %}</a>
+            </div>
+            <div class="card-body">
+                <h6 class="fw-semibold">{{ ms_data.account_name }}</h6>
+                {% with ms_data.four_players_statistics as stat %}
+                    {% if stat %}<p class="mb-1">{% trans "Four players" %}: {{ stat.get_rank_display }}, {{ stat.points }} / {{ stat.max_pt }}</p>{% endif %}
+                {% endwith %}
+                {% with ms_data.three_players_statistics as stat %}
+                    {% if stat %}<p class="mb-1">{% trans "Sanma" %}: {{ stat.get_rank_display }}, {{ stat.points }} / {{ stat.max_pt }}</p>{% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Club Statistics ──────────────────────────────────────────────── #}
+    {% if club_ratings %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white d-flex align-items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m7.728-1.578a4.5 4.5 0 0 1 0 4.056A3.5 3.5 0 0 0 15 9.5a3.5 3.5 0 0 0-1.272-2.922zM11.047 6.695a4 4 0 1 1 0-3.39A3.5 3.5 0 0 0 11 5a3.5 3.5 0 0 0 .047.695z"/></svg>
+                <strong>{% trans "Club statistics" %}</strong>
+            </div>
+            <div class="card-body">
+                {% for item in club_ratings %}
+                    <h6 class="fw-semibold"><a href="{% url 'club_details' item.club.slug %}#stat">{{ item.club.name }}</a>
+                        {% if item.club.city %}<small class="text-muted fw-normal">— {{ item.club.city }}</small>{% endif %}
+                    </h6>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-hover align-middle" style="max-width:600px">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{% trans "Games" %}</th>
+                                    <th>{% trans "Avg. place" %}</th>
+                                    <th>{% trans "1st" %}</th>
+                                    <th>{% trans "2nd" %}</th>
+                                    <th>{% trans "3rd" %}</th>
+                                    <th>{% trans "4th" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ item.games_count }}</td>
+                                    <td>{{ item.average_place|floatformat:2 }}</td>
+                                    <td>{{ item.first_place|floatformat:2 }}%</td>
+                                    <td>{{ item.second_place|floatformat:2 }}%</td>
+                                    <td>{{ item.third_place|floatformat:2 }}%</td>
+                                    <td>{{ item.fourth_place|floatformat:2 }}%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
 {% endblock %}
 
 {% block meta_tags %}
     <meta name="description" content="{% player_page_description player %}">
     <meta property="og:description" content="{% player_page_description player %}">
 {% endblock %}
+

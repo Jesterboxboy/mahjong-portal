@@ -4,7 +4,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from django.urls import re_path as url
 
-from account.views import account_settings, do_login, request_player_and_user_connection
+from account.views import account_settings, do_login, request_player_and_user_connection, set_attendance_intent
 
 
 class CustomLogoutView(auth_views.LogoutView):
@@ -23,5 +23,10 @@ urlpatterns = [
         r"request-verification/<slug:slug>/",
         request_player_and_user_connection,
         name="request_player_and_user_connection",
+    ),
+    path(
+        "attendance/<int:period_pk>/",
+        set_attendance_intent,
+        name="set_attendance_intent",
     ),
 ]

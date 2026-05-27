@@ -32,7 +32,7 @@ def download_players_list_csv(request):
     writer = csv.writer(content)
     writer.writerow(["EMA_NUMBER", "LAST_NAME", "FIRST_NAME", "COUNTRY"])
     for player in players:
-        writer.writerow([player.ema_id, player.last_name_en.upper(), player.first_name_en.upper(), "RUS : Russia"])
+        writer.writerow([player.ema_id, player.last_name.upper(), player.first_name.upper(), "RUS : Russia"])
 
     response = HttpResponse(content.getvalue(), content_type="text/x-csv")
     response["Content-Disposition"] = "attachment; filename=ema_players.csv"
@@ -44,10 +44,8 @@ def _get_players_query(query=None):
 
     if query:
         players = players.filter(
-            Q(first_name_de__icontains=query)
-            | Q(last_name_de__icontains=query)
-            | Q(first_name_en__icontains=query)
-            | Q(last_name_en__icontains=query)
+            Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
             | Q(ema_id__icontains=query)
         )
     return players
@@ -63,7 +61,7 @@ def add_new_player(request):
             player = form.save(commit=False)
             player.country = Country.objects.get(code="RU")
             player.ema_id = player.latest_ema_id + 1
-            player.slug = slugify("{} {}".format(player.last_name_en, player.first_name_en))
+            player.slug = slugify("{} {}".format(player.last_name, player.first_name))
             player.save()
 
             return redirect("list_of_ema_players")

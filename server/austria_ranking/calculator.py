@@ -2,9 +2,10 @@
 """
 Austrian riichi ranking calculation engine.
 
-Formula (from ranking-calculator/calculators/ranking_austria_riichi.py):
-  points = round(1000 / player_count * (player_count - position + 1))
-  A result of 0 (last place) is discarded.
+Formula (EMA standard):
+  points = round(((A - R) / (A - 1)) * 1000)
+  where A = number of players, R = player's rank (1-based).
+  Last place (R == A) yields 0 and is discarded.
 
 Final score per player:
   AT score     = sum of points for all Austrian tournaments
@@ -18,12 +19,14 @@ from player.models import Player
 
 def calculate_points(player_count: int, position: int) -> int:
     """Return the ranking points for a given tournament result."""
-    return round(1000 / player_count * (player_count - position + 1))
+    if player_count <= 1:
+        return 0
+    return round(((player_count - position) / (player_count - 1)) * 1000)
 
 
 def rank_players_for_period(quota_period) -> list[dict]:
     """
-    Calculate and persist AustrianRanking rows for the given QuotaPeriod.
+    Calculate and persist AustrianRanking rows for the given QuotaEvent.
 
     Returns the sorted ranking list as a list of dicts (for immediate use in views/admin).
     """

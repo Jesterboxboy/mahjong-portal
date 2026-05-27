@@ -10,7 +10,7 @@ from player.tenhou.models import TenhouNickname
 class PlayerForm(forms.ModelForm):
     class Meta:
         model = Player
-        exclude = ["first_name", "last_name"]
+        exclude = []
 
 
 class TenhouNicknameInline(admin.TabularInline):
@@ -22,11 +22,11 @@ class PlayerAdmin(admin.ModelAdmin):
     form = PlayerForm
     inlines = [TenhouNicknameInline]
 
-    prepopulated_fields = {"slug": ["last_name_en", "first_name_en"]}
+    prepopulated_fields = {"slug": ["last_name", "first_name"]}
 
     list_display = ["last_name", "first_name", "city", "pantheon_id"]
     list_filter = ["is_hide", "country"]
-    search_fields = ["first_name_de", "first_name_en", "last_name_de", "last_name_en", "ema_id"]
+    search_fields = ["first_name", "last_name", "ema_id"]
 
     def get_queryset(self, request):
         return Player.objects.all()
@@ -47,7 +47,7 @@ class PlayerTitleAdmin(admin.ModelAdmin):
 
 
 class PlayerQuotaEventAdmin(admin.ModelAdmin):
-    search_fields = ["player__first_name_de", "player__first_name_en", "player__last_name_de", "player__last_name_en"]
+    search_fields = ["player__first_name", "player__last_name"]
     list_display = ["player", "type", "place", "state", "federation_member"]
     list_filter = ["type", "state"]
     raw_id_fields = ["player"]

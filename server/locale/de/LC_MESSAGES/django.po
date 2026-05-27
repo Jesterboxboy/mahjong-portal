@@ -2492,4 +2492,46 @@ msgid "All news →"
 msgstr "Alle Neuigkeiten →"
 
 msgid "Event"
-msgstr "Veranstaltung"
+msgstr "Event"
+
+msgid "seats available"
+msgstr "Plätze verfügbar"
+
+msgid "Last calculation"
+msgstr "Letzte Berechnung"
+
+msgid "Confirmed seat"
+msgstr "Gesicherter Platz"
+
+msgid "No ranking calculated for this event yet."
+msgstr "Noch keine Rangliste für dieses Event berechnet."
+
+msgid "Calculate now"
+msgstr "Jetzt berechnen"
+
+msgid "No current Quota Event configured."
+msgstr "Kein aktuelles Quota-Event konfiguriert."
+
+msgid "My Profile"
+msgstr "Mein Profil"
+
+msgid "Player Profile"
+msgstr "Spielerprofil"
+
+msgid "Your account is linked to a player profile."
+msgstr "Dein Konto ist mit einem Spielerprofil verknüpft."
+
+msgid "View my player profile"
+msgstr "Mein Spielerprofil ansehen"
+
+msgid "Your account is not yet linked to a player profile. Contact an administrator to get verified."
+msgstr "Dein Konto ist noch nicht mit einem Spielerprofil verknüpft. Kontaktiere einen Administrator, um verifiziert zu werden."
+
+msgid "Event Attendance"
+msgstr "Teilnahme-Anmeldung"
+
+msgid "Let others know whether you plan to attend each qualifying event."
+msgstr "Teile anderen mit, ob du planst, an einem Qualifikationsevent teilzunehmen."
+
+msgid "Quota Event"
+msgstr "Quota-Event"

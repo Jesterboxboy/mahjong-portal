@@ -10,7 +10,7 @@
 
         {% if all_periods %}
         <form method="get" class="d-flex align-items-center gap-2">
-            <label for="periodSelect" class="text-muted small mb-0">Zeitraum:</label>
+            <label for="periodSelect" class="text-muted small mb-0">{% trans "Event" %}:</label>
             <select id="periodSelect" class="form-select form-select-sm" style="width: auto;"
                     onchange="window.location='/rangliste/' + this.value + '/'">
                 {% for p in all_periods %}
@@ -25,9 +25,12 @@
 
     {% if period %}
         <p class="text-muted small">
-            Zeitraum: {{ period.start_date|date:"d.m.Y" }} – {{ period.end_date|date:"d.m.Y" }}
+            {% trans "Event" %}: {{ period.start_date|date:"d.m.Y" }} – {{ period.end_date|date:"d.m.Y" }}
+            {% if period.seats_available %}
+            &middot; <strong>{{ period.seats_available }}</strong> {% trans "seats available" %}
+            {% endif %}
             {% if period.calculated_at %}
-            &middot; Letzte Berechnung: {{ period.calculated_at|date:"d.m.Y H:i" }}
+            &middot; {% trans "Last calculation" %}: {{ period.calculated_at|date:"d.m.Y H:i" }}
             {% endif %}
         </p>
     {% endif %}
@@ -47,7 +50,7 @@
             </thead>
             <tbody>
                 {% for ranking in rankings %}
-                <tr>
+                <tr{% if ranking.attendance_status == "yes" %} style="--bs-table-bg:#e8f5e9;"{% elif ranking.attendance_status == "no" %} style="--bs-table-bg:#ffebee;"{% endif %}>
                     <td class="fw-bold">{{ ranking.rank_position }}</td>
                     <td>
                         {% if ranking.player %}
@@ -55,6 +58,7 @@
                         {% else %}
                             {{ ranking.display_name }}
                         {% endif %}
+                        {% if ranking.has_seat %}<span class="text-success ms-1 fw-bold" title="{% trans 'Confirmed seat' %}">✓</span>{% endif %}
                     </td>
                     <td class="text-end">{{ ranking.at_points }}</td>
                     <td class="text-end">{{ ranking.foreign_points }}</td>
@@ -116,13 +120,13 @@
     </div>
     {% elif period %}
         <p class="text-muted mt-4">
-            Noch keine Rangliste für diesen Zeitraum berechnet.
+            {% trans "No ranking calculated for this event yet." %}
             {% if request.user.is_staff %}
-                <a href="{% url 'austria_ranking_run' period.pk %}">Jetzt berechnen</a>
+                <a href="{% url 'austria_ranking_run' period.pk %}">{% trans "Calculate now" %}</a>
             {% endif %}
         </p>
     {% else %}
-        <p class="text-muted mt-4">Kein aktueller Quota-Zeitraum konfiguriert.</p>
+        <p class="text-muted mt-4">{% trans "No current Quota Event configured." %}</p>
     {% endif %}
 </div>
 {% endblock %}

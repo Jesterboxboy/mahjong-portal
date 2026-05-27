@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 
 from account.forms import LoginForm
 from account.models import AttachingPlayerRequest, PantheonInfoUpdateLog, User
+from austria_ranking.models import EventAttendanceIntent, QuotaEvent
 from player.models import Player
 from player.player_helper import PlayerHelper
 from player.tenhou.models import TenhouAggregatedStatistics
@@ -93,6 +94,16 @@ def account_settings(request):
                         success = False
                         error_code = 1
 
+    # Build attendance data for the settings page
+    attendance_data = []
+    if request.user.is_authenticated and not is_anonymous:
+        existing_intents = {
+            i.quota_period_id: i.status
+            for i in EventAttendanceIntent.objects.filter(user=request.user)
+        }
+        for period in QuotaEvent.objects.all():
+            attendance_data.append((period, existing_intents.get(period.pk, EventAttendanceIntent.UNKNOWN)))
+
     return render(
         request,
         "account/settings.html",
@@ -101,6 +112,7 @@ def account_settings(request):
             "error_code": error_code,
             "player": current_player,
             "tenhou_account": current_tenhou_account,
+            "attendance_data": attendance_data,
         },
     )
 
@@ -135,3 +147,18 @@ def request_player_and_user_connection(request, slug):
     AttachingPlayerRequest.objects.create(user=request.user, player=player, contacts=contacts)
     messages.success(request, _("Request was created."))
     return redirect("player_details", player.slug)
+
+
+@login_required
+@require_POST
+def set_attendance_intent(request, period_pk: int):
+    period = get_object_or_404(QuotaEvent, pk=period_pk)
+    status = request.POST.get("status", EventAttendanceIntent.UNKNOWN)
+    if status not in (EventAttendanceIntent.ATTENDING, EventAttendanceIntent.NOT_ATTENDING, EventAttendanceIntent.UNKNOWN):
+        status = EventAttendanceIntent.UNKNOWN
+    EventAttendanceIntent.objects.update_or_create(
+        user=request.user,
+        quota_period=period,
+        defaults={"status": status},
+    )
+    return redirect("account_settings")

@@ -19,9 +19,9 @@ class CityForm(forms.ModelForm):
 class CityAdmin(admin.ModelAdmin):
     form = CityForm
     list_display = ["name"]
-    search_fields = ["name_de", "name_en"]
+    search_fields = ["name"]
 
-    prepopulated_fields = {"slug": ["name_en"]}
+    prepopulated_fields = {"slug": ["name"]}
 
 
 admin.site.register(Country, CountryAdmin)
