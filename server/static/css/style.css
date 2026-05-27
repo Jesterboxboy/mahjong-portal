@@ -38,6 +38,15 @@ a {
     max-width: 380px;
 }
 
+.tournament-registration .required-field > label {
+    color: #e57373;
+}
+
+.tournament-registration .required-field > label::after {
+    content: " *";
+    color: #dc3545;
+}
+
 .settings-table tr:first-child td {
     border-top: none;
 }

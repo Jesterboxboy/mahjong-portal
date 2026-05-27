@@ -4,10 +4,8 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
-from rating.calculation.crr import RatingCRRCalculation
 from rating.calculation.hardcoded_coefficients import HARDCODED_COEFFICIENTS
 from rating.calculation.online import RatingOnlineCalculation
-from rating.calculation.rr import RatingRRCalculation
 from rating.models import (
     ExternalRating,
     ExternalRatingDate,
@@ -285,8 +283,6 @@ def rating_tournaments(request, slug):
                     }
 
         top_tournaments_number = {
-            Rating.RR: RatingRRCalculation.SECOND_PART_MIN_TOURNAMENTS,
-            Rating.CRR: RatingCRRCalculation.SECOND_PART_MIN_TOURNAMENTS,
             Rating.ONLINE: RatingOnlineCalculation.SECOND_PART_MIN_TOURNAMENTS,
         }.get(rating.type)
 

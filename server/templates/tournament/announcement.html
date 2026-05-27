@@ -19,7 +19,7 @@
             <p>{% trans 'Will be held' %} {{ tournament.start_date }}</p>
 
             {% if tournament.opened_registration %}
-                {% if tournament.is_online %}
+                {% if tournament.is_online or tournament.is_pantheon_registration %}
                     {% if tournament.is_majsoul_tournament %}
                         <p>{% trans 'Registered players' %} {{ tournament.ms_online_tournament_registrations.count }}</p>
                     {% else %}
@@ -38,144 +38,260 @@
 
         {% include 'tournament/_tournament_header.html' %}
 
-        {% if tournament.registration_description %}
-            <h3>{% trans 'Description' %}</h3>
-            <p>{{ tournament.registration_description|linebreaksbr|urlize }}</p>
-        {% endif %}
-
-        {% if missed_tenhou_id_error %}
-            <p class="alert alert-danger">{% trans 'Before applying for the tournament, please set tenhou id on Pantheon first' %}</p>
-        {% endif %}
-
-        {% if form_data_error %}
-            <p class="alert alert-danger">{% trans 'Incorrect form data' %}</p>
-        {% endif %}
-
-        {% if is_already_registered %}
-            <p class="alert alert-success">{% trans 'You are already registered on the tournament!' %}</p>
-            {% if tournament.is_online %}
-                {% if registration_confirm_code %}
-                    <p class="alert alert-warning">
-                        {% trans 'Your confirm code:' %} {{ registration_confirm_code }}
-                    </p>
-                {% endif %}
+        {# ── Tabs ───────────────────────────────────────────────────────── #}
+        {% with has_info=tournament.venue_address|default:tournament.schedule|default:tournament.lunch_options|default:tournament.contact_info %}
+        <ul class="nav nav-tabs mt-3" id="announcementTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="registration-tab" data-bs-toggle="tab"
+                        data-bs-target="#registration-pane" type="button" role="tab">
+                    {% trans 'Registration' %}
+                </button>
+            </li>
+            {% if has_info %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="info-tab" data-bs-toggle="tab"
+                        data-bs-target="#info-pane" type="button" role="tab">
+                    {% trans 'Tournament Info' %}
+                </button>
+            </li>
             {% endif %}
-        {% elif tournament.is_pantheon_registration %}
-            {% if tournament.opened_registration %}
-                {% if not user.is_authenticated %}
-                    <p>
-                        <a href="{% url 'do_login' %}?next={% url 'tournament_announcement' tournament.slug %}" class="btn btn-primary">{% trans 'Login through Pantheon to apply for tournament' %}</a>
-                    </p>
-                {% else %}
-                    <form class="form" style="max-width: none" action="{% url 'pantheon_tournament_registration' tournament.id %}" method="POST">
-                        {% csrf_token %}
+        </ul>
+        <div class="tab-content mt-3" id="announcementTabsContent">
 
-                        {% bootstrap_form form %}
+            {# ── Registration tab ──────────────────────────────────────── #}
+            <div class="tab-pane fade show active" id="registration-pane" role="tabpanel">
 
-                        <button type="submit" class="btn btn-primary">{% trans 'Apply for tournament through Pantheon account' %}</button>
-                    </form>
+                {% if tournament.registration_description %}
+                    <p>{{ tournament.registration_description|linebreaksbr|urlize }}</p>
                 {% endif %}
-            {% endif %}
-        {% elif tournament.opened_registration %}
-            <h3 id="registration">{% trans 'Registration' %}</h3>
-            <form class="form" action="{% url 'tournament_registration' tournament.id %}" method="POST">
-                {% csrf_token %}
 
-                {% bootstrap_form form %}
+                {% if missed_tenhou_id_error %}
+                    <p class="alert alert-danger">{% trans 'Before applying for the tournament, please set tenhou id on Pantheon first' %}</p>
+                {% endif %}
+                {% if form_data_error %}
+                    <p class="alert alert-danger">{% trans 'Incorrect form data' %}</p>
+                {% endif %}
 
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary">{% trans 'Submit' %}</button>
-                </div>
-            </form>
-        {% elif tournament.registration_link %}
-            <h3>{% trans 'Registration' %}</h3>
-            <p><a href="{{ tournament.registration_link }}" target="_blank">{{ tournament.registration_link }}</a></p>
-        {% endif %}
-
-        {% if registration_results %}
-            <h3 id="players">{% trans 'Participants' %}</h3>
-            <div class="table-responsive-sm">
-                <table class="table table-hover mt-4">
-                    <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">{% trans 'Name' %}</th>
-                        <th scope="col">{% trans 'City' %}</th>
-                        {% if tournament.is_online %}
-                            {% if tournament.is_majsoul_tournament %}
-                                <th scope="col">{% trans 'Majsoul nickname' %}</th>
-                            {% else %}
-                                <th scope="col">{% trans 'Tenhou.net nickname' %}</th>
-                            {% endif %}
+                {% if is_already_registered %}
+                    <p class="alert alert-success">{% trans 'You are already registered on the tournament!' %}</p>
+                    {% if tournament.is_online %}
+                        {% if registration_confirm_code %}
+                            <p class="alert alert-warning">
+                                {% trans 'Your confirm code:' %} {{ registration_confirm_code }}
+                            </p>
                         {% endif %}
-
-                        {% if not tournament.is_majsoul_tournament %}
-                            <th scope="col">{% trans 'Dan' %}</th>
-                        {% endif %}
-
-                        {% if tournament.display_notes and tournament.share_notes and tournament.is_command %}
-                            <th scope="col">{% trans 'Team' %}</th>
+                    {% endif %}
+                {% elif tournament.is_pantheon_registration %}
+                    {% if tournament.opened_registration %}
+                        {% if not user.is_authenticated %}
+                            <p>
+                                <a href="{% url 'do_login' %}?next={% url 'tournament_announcement' tournament.slug %}" class="btn btn-primary">{% trans 'Login through Pantheon to apply for tournament' %}</a>
+                            </p>
                         {% else %}
-                            {% if tournament.display_notes and tournament.share_notes %}
-                                <th scope="col">{% trans 'Notes' %}</th>
-                            {% endif %}
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
+                                    <strong>{% trans 'Registration' %}</strong>
+                                </div>
+                                <div class="card-body">
+                                    <form style="max-width: none" action="{% url 'pantheon_tournament_registration' tournament.id %}" method="POST">
+                                        {% csrf_token %}
+                                        {% for field in form %}
+                                            {% if field.name == 'allow_to_save_data' and tournament.gdpr_document %}
+                                                <p class="mb-1">
+                                                    <a href="{{ tournament.gdpr_document.url }}" target="_blank" rel="noopener">
+                                                        {% trans 'View GDPR / data protection document (PDF)' %}
+                                                    </a>
+                                                </p>
+                                            {% endif %}
+                                            {% bootstrap_field field %}
+                                        {% endfor %}
+                                        <div class="text-end mt-2">
+                                            <button type="submit" class="btn btn-primary">{% trans 'Apply for tournament through Pantheon account' %}</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         {% endif %}
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for registration_item in registration_results %}
-                        <tr {% if registration_item.is_highlighted %}class="table-success" {% endif %}>
-                            <th scope="row">{{ forloop.counter }}</th>
-                            <td>
-                                {% if registration_item.player %}
-                                    {% with registration_item.player as player %}
-                                        {% include 'common/_player_name.html' %}
-                                    {% endwith %}
-                                {% else %}
-                                    {{ registration_item.full_name }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if registration_item.player and registration_item.player.city %}
-                                    <a href="{% url 'city_page' registration_item.player.city.slug %}">{{ registration_item.player.city.name }}</a>
-                                {% elif registration_item.city_object %}
-                                    <a href="{% url 'city_page' registration_item.city_object.slug %}">{{ registration_item.city_object.name }}</a>
-                                {% else %}
-                                    {{ registration_item.city }}
-                                {% endif %}
-                            </td>
-
-                            {% if tournament.is_online %}
-                                {% if tournament.is_majsoul_tournament %}
-                                    {% if registration_item.player.ms_object %}
-                                        <td><a href="{% url 'player_ms_details' registration_item.player.slug %}" class="d-print-none">{{ registration_item.ms_nickname }}</a></td>
-                                    {% else %}
-                                        <td>{{ registration_item.ms_nickname|get_safe_str }}</td>
+                    {% endif %}
+                {% elif tournament.opened_registration %}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
+                            <strong>{% trans 'Registration' %}</strong>
+                        </div>
+                        <div class="card-body">
+                            <form action="{% url 'tournament_registration' tournament.id %}" method="POST">
+                                {% csrf_token %}
+                                {% for field in form %}
+                                    {% if field.name == 'allow_to_save_data' and tournament.gdpr_document %}
+                                        <p class="mb-1">
+                                            <a href="{{ tournament.gdpr_document.url }}" target="_blank" rel="noopener">
+                                                {% trans 'View GDPR / data protection document (PDF)' %}
+                                            </a>
+                                        </p>
                                     {% endif %}
-                                {% else %}
-                                    <td>{{ registration_item.tenhou_nickname|get_safe_str }}</td>
-                                {% endif %}
-                            {% endif %}
+                                    {% bootstrap_field field %}
+                                {% endfor %}
+                                <div class="text-end mt-2">
+                                    <button type="submit" class="btn btn-primary">{% trans 'Submit' %}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% elif tournament.registration_link %}
+                    <h3>{% trans 'Registration' %}</h3>
+                    <p><a href="{{ tournament.registration_link }}" target="_blank">{{ tournament.registration_link }}</a></p>
+                {% endif %}
 
-                            {% if not tournament.is_majsoul_tournament %}
-                                <td>
-                                    {% with registration_item.player as player %}
-                                        {% include 'player/_online_account.html' %}
-                                    {% endwith %}
-                                </td>
-                            {% endif %}
+                {% if registration_results %}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-success text-white d-flex align-items-center gap-2">
+                            <strong>{% trans 'Participants' %}</strong>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive-sm">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">{% trans 'Name' %}</th>
+                                        <th scope="col">{% trans 'City' %}</th>
+                                        {% if tournament.is_online %}
+                                            {% if tournament.is_majsoul_tournament %}
+                                                <th scope="col">{% trans 'Majsoul nickname' %}</th>
+                                            {% else %}
+                                                <th scope="col">{% trans 'Tenhou.net nickname' %}</th>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if not tournament.is_majsoul_tournament %}
+                                            <th scope="col">{% trans 'Dan' %}</th>
+                                        {% endif %}
+                                        {% if tournament.display_notes and tournament.share_notes and tournament.is_command %}
+                                            <th scope="col">{% trans 'Team' %}</th>
+                                        {% elif tournament.display_notes and tournament.share_notes %}
+                                            <th scope="col">{% trans 'Notes' %}</th>
+                                        {% endif %}
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for registration_item in registration_results %}
+                                        <tr {% if registration_item.is_highlighted %}class="table-success" {% endif %}>
+                                            <th scope="row">{{ forloop.counter }}</th>
+                                            <td>
+                                                {% if registration_item.player %}
+                                                    {% with registration_item.player as player %}
+                                                        {% include 'common/_player_name.html' %}
+                                                    {% endwith %}
+                                                {% else %}
+                                                    {{ registration_item.full_name }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if registration_item.player and registration_item.player.city %}
+                                                    <a href="{% url 'city_page' registration_item.player.city.slug %}">{{ registration_item.player.city.name }}</a>
+                                                {% elif registration_item.city_object %}
+                                                    <a href="{% url 'city_page' registration_item.city_object.slug %}">{{ registration_item.city_object.name }}</a>
+                                                {% else %}
+                                                    {{ registration_item.city }}
+                                                {% endif %}
+                                            </td>
+                                            {% if tournament.is_online %}
+                                                {% if tournament.is_majsoul_tournament %}
+                                                    {% if registration_item.player.ms_object %}
+                                                        <td><a href="{% url 'player_ms_details' registration_item.player.slug %}" class="d-print-none">{{ registration_item.ms_nickname }}</a></td>
+                                                    {% else %}
+                                                        <td>{{ registration_item.ms_nickname|get_safe_str }}</td>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <td>{{ registration_item.tenhou_nickname|get_safe_str }}</td>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if not tournament.is_majsoul_tournament %}
+                                                <td>
+                                                    {% with registration_item.player as player %}
+                                                        {% include 'player/_online_account.html' %}
+                                                    {% endwith %}
+                                                </td>
+                                            {% endif %}
+                                            {% if tournament.display_notes and tournament.share_notes %}
+                                                <td>{{ registration_item.notes }}</td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>{# /registration-pane #}
 
-                            {% if tournament.display_notes and tournament.share_notes %}
-                                <td>
-                                    {{ registration_item.notes }}
-                                </td>
-                            {% endif %}
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+            {# ── Info tab ──────────────────────────────────────────────── #}
+            {% if has_info %}
+            <div class="tab-pane fade" id="info-pane" role="tabpanel">
+                <div class="row g-4">
+
+                    {% if tournament.venue_address %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-secondary text-white d-flex align-items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/></svg>
+                                <strong>{% trans 'Venue & Address' %}</strong>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">{{ tournament.venue_address|linebreaksbr }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if tournament.schedule %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/></svg>
+                                <strong>{% trans 'Schedule / Itinerary' %}</strong>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">{{ tournament.schedule|linebreaksbr }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if tournament.lunch_options %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-warning text-dark d-flex align-items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 5.034v1.1l.953.55-.5.867L8 6.982l-.953.55-.5-.866.953-.55v-1.1a4 4 0 1 0 1 0zM8 4a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1"/></svg>
+                                <strong>{% trans 'Lunch Options' %}</strong>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">{{ tournament.lunch_options|linebreaksbr }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if tournament.contact_info %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-info text-white d-flex align-items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a5 5 0 1 0 0 10A5 5 0 0 0 8 1M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/></svg>
+                                <strong>{% trans 'Contact' %}</strong>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">{{ tournament.contact_info|linebreaksbr|urlize }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
             </div>
-        {% endif %}
+            {% endif %}
+
+        </div>{# /tab-content #}
+        {% endwith %}
     </div>
 {% endblock %}
 
@@ -183,3 +299,4 @@
     <meta name="description" content="{{ tournament.registration_description|default:tournament.name }}">
     <meta property="og:description" content="{{ tournament.registration_description|default:tournament.name }}">
 {% endblock %}
+

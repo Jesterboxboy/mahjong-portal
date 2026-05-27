@@ -21,8 +21,7 @@ class TournamentForm(forms.ModelForm):
     class Meta:
         model = Tournament
         fields = [
-            "name_de",
-            "name_en",
+            "name",
             "slug",
             "start_date",
             "end_date",

@@ -17,7 +17,7 @@ from utils.general import get_tournament_coefficient
 
 
 class RatingRRCalculation:
-    TOURNAMENT_TYPES = [Tournament.RR, Tournament.EMA, Tournament.FOREIGN_EMA]
+    TOURNAMENT_TYPES = [Tournament.EMA]
 
     FIRST_PART_MIN_TOURNAMENTS = 5
     SECOND_PART_MIN_TOURNAMENTS = 4

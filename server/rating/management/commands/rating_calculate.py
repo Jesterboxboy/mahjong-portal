@@ -177,17 +177,6 @@ class Command(BaseCommand):
             # there is no need to rebuild it each day
             limited_tournaments = tournaments.filter(end_date__lte=start_date)
             for tournament in limited_tournaments:
-                # we don't want to add foreign ema tournaments without russian players
-                # to the dates calculations
-                if tournament.tournament_type == Tournament.FOREIGN_EMA and rating.type != Rating.EMA:
-                    has_russian_players = (
-                        TournamentResult.objects.filter(tournament=tournament)
-                        .filter(player__country__code="RU")
-                        .exists()
-                    )
-                    if not has_russian_players:
-                        continue
-
                 if tournament.id not in tournaments_diff:
                     age = calculator.tournament_age(tournament.end_date, start_date)
                     need_to_recalculate = True

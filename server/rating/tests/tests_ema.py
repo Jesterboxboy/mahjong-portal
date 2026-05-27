@@ -75,12 +75,3 @@ class EMARatingTestCase(TestCase, RatingTestMixin):
 
         self.create_tournament_result(tournament, 10, self.create_player(country_code="10"))
         self.assertEqual(calculator.countries_coefficient(tournament), 1)
-
-    def test_tournament_coefficient_and_qualification(self):
-        calculator = RatingEMACalculation()
-
-        tournament = self.create_tournament(tournament_type=Tournament.EMA)
-        self.assertEqual(calculator.qualification_coefficient(tournament), 0)
-
-        tournament = self.create_tournament(tournament_type=Tournament.CHAMPIONSHIP)
-        self.assertEqual(calculator.qualification_coefficient(tournament), 1)

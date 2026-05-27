@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
+from django.conf import settings
 from django.conf.urls import include
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import re_path as url
 from django.views.decorators.cache import cache_page
+from django.views.static import serve
 
 from mahjong_portal.sitemap import (
     ClubSitemap,
@@ -96,7 +98,11 @@ urlpatterns += i18n_patterns(
     url(r"^wiki/", include("wiki.urls")),
     url(r"^league/", include("league.urls")),
     url(r"^titles/", include("title.urls")),
-    url(r"^yagi-keiji-cup/", include("yagi_keiji_cup.urls")),
     url(r"^neuigkeiten/", include("news.urls")),
     url("i18n/", include("django.conf.urls.i18n")),
 )
+
+if settings.DEBUG:
+    urlpatterns += [
+        url(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    ]

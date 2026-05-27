@@ -12,18 +12,16 @@ class Command(BaseCommand):
         with open("export_players.csv", "w") as f:
             writer = csv.writer(f)
 
-            players = Player.objects.filter(country__code="RU")
+            players = Player.objects.all()
 
-            rows = [["id", "last_name_de", "first_name_de", "last_name_en", "first_name_en", "ema_id"]]
+            rows = [["id", "last_name", "first_name", "ema_id"]]
 
             for player in players:
                 rows.append(
                     [
                         player.id,
-                        player.last_name_de,
-                        player.first_name_de,
-                        player.last_name_en,
-                        player.first_name_en,
+                        player.last_name,
+                        player.first_name,
                         player.ema_id,
                     ]
                 )

@@ -6,7 +6,7 @@ from tournament.models import Tournament
 
 
 class RatingCRRCalculation(RatingRRCalculation, RatingDatesMixin):
-    TOURNAMENT_TYPES = [Tournament.CRR, Tournament.RR, Tournament.EMA, Tournament.FOREIGN_EMA]
+    TOURNAMENT_TYPES = [Tournament.EMA]
 
     def get_date(self, rating_date):
         return RatingDatesMixin.get_date(self, rating_date)

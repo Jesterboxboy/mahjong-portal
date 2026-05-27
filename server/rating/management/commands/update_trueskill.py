@@ -34,28 +34,16 @@ def get_rating_by_type(type):
     if ExternalRating.TYPES[ExternalRating.TRUESKILL][1] == type.upper():
         return ExternalRating.objects.get_or_create(
             name="Trueskill",
-            name_en="Trueskill rating (beta version)",
-            name_de="Trueskill-Wertung (Betaversion)",
             slug="trueskill",
             description="Trueskill rating",
-            description_en="Trueskill rating system for players developed by "
-            "Microsoft Research. Link for more information https://trueskill.org/",
-            description_de="Trueskill-Bewertungssystem, entwickelt von "
-            "Microsoft Research. Weitere Informationen unter https://trueskill.org/",
             type=ExternalRating.TRUESKILL,
             order=0,
         )[0]
     if ExternalRating.TYPES[ExternalRating.ONLINE_TRUESKILL][1] == type.upper():
         return ExternalRating.objects.get_or_create(
             name="Online Trueskill",
-            name_en="Online Trueskill rating (beta version)",
-            name_de="Online Trueskill-Wertung (Betaversion)",
             slug="online-trueskill",
             description="Online Trueskill rating",
-            description_en="Trueskill online rating system for players developed by "
-            "Microsoft Research. Link for more information https://trueskill.org/",
-            description_de="Online Trueskill-Bewertungssystem, entwickelt von "
-            "Microsoft Research. Weitere Informationen unter https://trueskill.org/",
             type=ExternalRating.ONLINE_TRUESKILL,
             order=1,
         )[0]

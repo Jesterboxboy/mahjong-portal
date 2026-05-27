@@ -13,7 +13,7 @@ from utils.general import get_tournament_coefficient
 
 
 class RatingEMACalculation(RatingRRCalculation, RatingDatesMixin):
-    TOURNAMENT_TYPES = [Tournament.EMA, Tournament.FOREIGN_EMA, Tournament.CHAMPIONSHIP]
+    TOURNAMENT_TYPES = [Tournament.EMA]
     IS_EMA = True
 
     def get_date(self, rating_date):
@@ -207,7 +207,6 @@ class RatingEMACalculation(RatingRRCalculation, RatingDatesMixin):
                 self.players_coefficient(tournament),
                 self.duration_coefficient(tournament),
                 self.countries_coefficient(tournament),
-                self.qualification_coefficient(tournament),
             ]
         )
 
@@ -240,9 +239,6 @@ class RatingEMACalculation(RatingRRCalculation, RatingDatesMixin):
             return 0.5
         else:
             return 1.0
-
-    def qualification_coefficient(self, tournament):
-        return tournament.tournament_type == Tournament.CHAMPIONSHIP and 1 or 0
 
     def tournament_age(self, end_date, rating_date):
         diff = relativedelta(rating_date, end_date)

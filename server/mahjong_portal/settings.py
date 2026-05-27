@@ -78,7 +78,6 @@ INSTALLED_APPS = [
     "online",
     "ema",
     "league",
-    "yagi_keiji_cup",
     "news",
     "austria_ranking",
 ]
@@ -193,6 +192,9 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "collected_static")
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STORAGES = {"staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"}}
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 HAYSTACK_CONNECTIONS = {
     "default": {

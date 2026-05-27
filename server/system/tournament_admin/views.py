@@ -187,7 +187,7 @@ def managed_tournaments(request):
 def tournament_manage(request, tournament_id, **kwargs):
     tournament = kwargs["tournament"]
 
-    if tournament.is_online():
+    if tournament.is_online() or tournament.is_pantheon_registration:
         if tournament.is_majsoul_tournament:
             tournament_registrations = MsOnlineTournamentRegistration.objects.filter(tournament=tournament).order_by(
                 "-created_on"

@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
             calculator = RatingRRCalculation()
             rating = Rating.objects.get(type=Rating.RR)
-            types = [Tournament.RR, Tournament.EMA, Tournament.FOREIGN_EMA]
+            types = [Tournament.EMA]
             tournaments = (
                 Tournament.public.filter(tournament_type__in=types).filter(is_upcoming=False).order_by("end_date")
             )

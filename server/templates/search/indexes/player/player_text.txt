@@ -1,5 +1,5 @@
 {{ object.first_name_ru }}
 {{ object.last_name_ru }}
-{{ object.first_name_en }}
-{{ object.last_name_en }}
+{{ object.first_name }}
+{{ object.last_name }}
 {{ object.tenhou_object.tenhou_username }}

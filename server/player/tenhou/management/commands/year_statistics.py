@@ -19,8 +19,6 @@ class Command(BaseCommand):
 
         results = (
             TournamentResult.objects.filter(tournament__end_date__gte=start_date, tournament__end_date__lt=end_date)
-            .exclude(tournament__tournament_type=Tournament.FOREIGN_EMA)
-            .exclude(tournament__tournament_type=Tournament.CHAMPIONSHIP)
         )
 
         player_ids = [x.player_id for x in results]

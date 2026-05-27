@@ -44,10 +44,10 @@ def tournament_list(request, tournament_type=None, year=None):
     tournaments = Tournament.objects.filter(end_date__year=selected_year)
 
     if tournament_type == "ema":
-        tournament_types = [Tournament.EMA, Tournament.FOREIGN_EMA, Tournament.CHAMPIONSHIP]
+        tournament_types = [Tournament.EMA]
         tournaments = tournaments.filter(tournament_type__in=tournament_types)
     else:
-        tournament_types = [Tournament.EMA, Tournament.RR, Tournament.CRR, Tournament.OTHER, Tournament.ONLINE]
+        tournament_types = [Tournament.EMA, Tournament.OTHER, Tournament.ONLINE]
         tournaments = tournaments.filter(tournament_type__in=tournament_types)
 
     tournaments = tournaments.order_by("-end_date").prefetch_related("city").prefetch_related("country")
@@ -56,7 +56,6 @@ def tournament_list(request, tournament_type=None, year=None):
     all_tournaments = (
         Tournament.public.filter(is_upcoming=True)
         .filter(is_event=False)
-        .exclude(tournament_type=Tournament.FOREIGN_EMA)
         .prefetch_related("city")
         .order_by("start_date", "name")
     )
@@ -129,7 +128,7 @@ def tournament_announcement(request, slug):
 
     initial = {"tournament": tournament}
     if tournament.city and tournament.fill_city_in_registration:
-        initial["city"] = tournament.city.name_de
+        initial["city"] = tournament.city.name
 
     if tournament.is_online():
         if tournament.is_majsoul_tournament and tournament.is_pantheon_registration:
@@ -142,7 +141,7 @@ def tournament_announcement(request, slug):
         form = TournamentRegistrationForm(initial=initial)
 
     full_approved_players_count = 0
-    if tournament.is_online():
+    if tournament.is_online() or tournament.is_pantheon_registration:
         if tournament.is_majsoul_tournament:
             registration_results = (
                 MsOnlineTournamentRegistration.objects.filter(tournament=tournament)
@@ -178,7 +177,6 @@ def tournament_announcement(request, slug):
     is_already_registered = False
     registration_confirm_code = None
     if request.user.is_authenticated:
-        # TODO support not only online tournaments
         if tournament.is_majsoul_tournament:
             current_registration = MsOnlineTournamentRegistration.objects.filter(
                 tournament=tournament, user=request.user, is_approved=True
@@ -186,7 +184,7 @@ def tournament_announcement(request, slug):
             is_already_registered = current_registration.exists()
             if is_already_registered:
                 registration_confirm_code = current_registration[0].confirm_code
-        else:
+        elif tournament.is_online() or tournament.is_pantheon_registration:
             current_registration = OnlineTournamentRegistration.objects.filter(
                 tournament=tournament, user=request.user, is_approved=True
             )
@@ -252,7 +250,7 @@ def pantheon_tournament_registration(request, tournament_id):
     first_name, last_name = split_name(full_name)
 
     player = PlayerHelper.find_player_smart(player_full_name=full_name)
-    city_object = City.objects.filter(name_de=data["city"].title()).first()
+    city_object = City.objects.filter(name=data["city"].title()).first()
 
     if not tournament.is_majsoul_tournament and not data["tenhou_id"]:
         return redirect(tournament.get_url() + "?error=tenhou_id")
@@ -329,7 +327,7 @@ def tournament_registration(request, tournament_id):
 
         try:
             if instance.city:
-                instance.city_object = City.objects.get(name_de=instance.city)
+                instance.city_object = City.objects.get(name=instance.city)
         except City.DoesNotExist:
             pass
 

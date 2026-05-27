@@ -13,7 +13,7 @@ class CountryAdmin(admin.ModelAdmin):
 class CityForm(forms.ModelForm):
     class Meta:
         model = City
-        exclude = ["name"]
+        exclude = []
 
 
 class CityAdmin(admin.ModelAdmin):

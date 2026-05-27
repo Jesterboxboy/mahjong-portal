@@ -55,13 +55,9 @@ class Tournament(BaseModel):
     RIICHI = 0
     MCR = 1
 
-    RR = "rr"
-    CRR = "crr"
     EMA = "ema"
-    FOREIGN_EMA = "fema"
     OTHER = "other"
     ONLINE = "online"
-    CHAMPIONSHIP = "champ"
 
     OFFLINE_GAMES = "offline"
     ONLINE_GAMES = "online"
@@ -69,13 +65,9 @@ class Tournament(BaseModel):
     GAME_TYPES = [[RIICHI, "Riichi"], [MCR, "MCR"]]
 
     TOURNAMENT_TYPES = [
-        [RR, "rr"],
-        [CRR, "crr"],
         [EMA, "ema"],
-        [FOREIGN_EMA, "fema"],
         [OTHER, "other"],
         [ONLINE, "online"],
-        [CHAMPIONSHIP, "champ."],
     ]
 
     TOURNAMENT_GAMES_TYPES = [
@@ -103,7 +95,7 @@ class Tournament(BaseModel):
     country = models.ForeignKey(Country, on_delete=models.PROTECT)
     city = models.ForeignKey(City, on_delete=models.PROTECT, null=True, blank=True)
 
-    tournament_type = models.CharField(max_length=10, choices=TOURNAMENT_TYPES, default=RR, db_index=True)
+    tournament_type = models.CharField(max_length=10, choices=TOURNAMENT_TYPES, default=EMA, db_index=True)
     tournament_games_type = models.CharField(max_length=10, choices=TOURNAMENT_GAMES_TYPES, default=OFFLINE_GAMES)
 
     is_upcoming = models.BooleanField(default=False)
@@ -111,7 +103,6 @@ class Tournament(BaseModel):
     is_event = models.BooleanField(default=False)
     is_majsoul_tournament = models.BooleanField(default=False)
     is_pantheon_registration = models.BooleanField(default=False)
-    russian_cup = models.BooleanField(default=False)
     fill_city_in_registration = models.BooleanField(default=False)
     opened_registration = models.BooleanField(default=False)
     registrations_pre_moderation = models.BooleanField(default=False)
@@ -128,6 +119,17 @@ class Tournament(BaseModel):
     old_pantheon_id = models.CharField(max_length=20, null=True, blank=True)
     new_pantheon_id = models.CharField(max_length=20, null=True, blank=True)
     ema_id = models.CharField(max_length=20, null=True, blank=True)
+
+    venue_address = models.TextField(null=True, blank=True, verbose_name=_("Venue & address"))
+    schedule = models.TextField(null=True, blank=True, verbose_name=_("Schedule / Itinerary"))
+    lunch_options = models.TextField(null=True, blank=True, verbose_name=_("Lunch options"))
+    contact_info = models.TextField(null=True, blank=True, verbose_name=_("Contact information"))
+    gdpr_document = models.FileField(
+        upload_to="tournament/gdpr/",
+        null=True,
+        blank=True,
+        verbose_name=_("GDPR document (PDF)"),
+    )
     online_config = models.ForeignKey(OnlineTournamentConfig, on_delete=models.PROTECT, null=True, blank=True)
 
     def __unicode__(self):
@@ -151,17 +153,8 @@ class Tournament(BaseModel):
         if self.is_ema():
             return "success"
 
-        if self.is_rr():
-            return "primary"
-
-        if self.is_crr():
-            return "info"
-
         if self.is_online_rating():
             return "warning"
-
-        if self.is_championship():
-            return "championship"
 
         return "info"
 
@@ -212,13 +205,7 @@ class Tournament(BaseModel):
     @property
     def type_help_text(self):
         if self.is_ema():
-            return "EMA, RR, CRR"
-
-        if self.is_rr():
-            return "RR, CRR"
-
-        if self.is_crr():
-            return "CRR"
+            return "EMA"
 
         if self.is_online_rating():
             return "Online"
@@ -233,10 +220,7 @@ class Tournament(BaseModel):
 
     @property
     def type_display(self):
-        if self.tournament_type == self.FOREIGN_EMA:
-            return "EMA"
-        else:
-            return self.get_tournament_type_display()
+        return self.get_tournament_type_display()
 
     @property
     def tournament_type_display(self):
@@ -267,23 +251,13 @@ class Tournament(BaseModel):
 
     @property
     def rating_link(self):
-        if self.is_other() or self.is_championship():
+        if self.is_other():
             return ""
 
-        tournament_type = self.tournament_type
-        if tournament_type == self.FOREIGN_EMA:
-            tournament_type = self.EMA
-
-        return reverse("rating", kwargs={"slug": tournament_type})
+        return reverse("rating", kwargs={"slug": self.tournament_type})
 
     def is_ema(self):
-        return self.tournament_type == self.EMA or self.tournament_type == self.FOREIGN_EMA
-
-    def is_rr(self):
-        return self.tournament_type == self.RR
-
-    def is_crr(self):
-        return self.tournament_type == self.CRR
+        return self.tournament_type == self.EMA
 
     def is_online_rating(self):
         return self.tournament_type == self.ONLINE
@@ -294,14 +268,11 @@ class Tournament(BaseModel):
     def is_other(self):
         return self.tournament_type == self.OTHER
 
-    def is_championship(self):
-        return self.tournament_type == self.CHAMPIONSHIP
-
     def is_stage_tournament(self):
         return self.id == AGARI_TOURNAMENT_ID
 
     def get_tournament_registrations(self):
-        if self.is_online():
+        if self.is_online() or self.is_pantheon_registration:
             if self.is_majsoul_tournament:
                 return self.ms_online_tournament_registrations.filter(is_approved=True)
             else:
@@ -310,12 +281,7 @@ class Tournament(BaseModel):
             return self.tournament_registrations.filter(is_approved=True)
 
     def championship_tournament_results(self):
-        results = TournamentResult.objects.filter(tournament=self).order_by("place")
-        if self.tournament_type == Tournament.CHAMPIONSHIP:
-            results = results.filter(player__country__code="RU")
-        else:
-            results = results[:8]
-        return results
+        return TournamentResult.objects.filter(tournament=self).order_by("place")[:8]
 
 
 class TournamentResult(BaseModel):
@@ -357,8 +323,16 @@ class TournamentRegistration(BaseModel):
     first_name = models.CharField(max_length=255, verbose_name=_("First name"))
     last_name = models.CharField(max_length=255, verbose_name=_("Last name"))
     city = models.CharField(max_length=255, verbose_name=_("City"))
+    email = models.EmailField(
+        max_length=255, verbose_name=_("Email"), help_text=_("It will be visible only to the administrator")
+    )
     phone = models.CharField(
-        max_length=255, verbose_name=_("Phone"), help_text=_("It will be visible only to the administrator")
+        max_length=255,
+        verbose_name=_("Phone"),
+        help_text=_("It will be visible only to the administrator"),
+        default="",
+        null=True,
+        blank=True,
     )
     additional_contact = models.CharField(
         max_length=255,
@@ -377,6 +351,9 @@ class TournamentRegistration(BaseModel):
     )
     city_object = models.ForeignKey(City, on_delete=models.CASCADE, null=True, blank=True)
 
+    registration_country = models.CharField(
+        max_length=255, verbose_name=_("Country"), null=True
+    )
     allow_to_save_data = models.BooleanField(default=False, verbose_name=_("I allow to store my personal data"))
 
     def __unicode__(self):
@@ -411,6 +388,9 @@ class OnlineTournamentRegistration(BaseModel):
     user = models.ForeignKey("account.User", on_delete=models.CASCADE, null=True, blank=True)
     city_object = models.ForeignKey(City, on_delete=models.CASCADE, null=True, blank=True)
 
+    registration_country = models.CharField(
+        max_length=255, verbose_name=_("Country"), null=True
+    )
     allow_to_save_data = models.BooleanField(default=False, verbose_name=_("I allow to store my personal data"))
 
     notes = models.TextField(null=True, blank=True, default="", verbose_name=_("Additional info"))

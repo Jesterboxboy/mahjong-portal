@@ -11,7 +11,6 @@ import ujson as json
 from django.conf import settings
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import connection, transaction
-from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import translation
@@ -43,7 +42,6 @@ def home(request):
     all_tournaments = (
         Tournament.public.filter(is_upcoming=True)
         .filter(is_event=False)
-        .exclude(tournament_type=Tournament.FOREIGN_EMA)
         .prefetch_related("city")
         .order_by("start_date", "name")
     )
@@ -193,14 +191,6 @@ def _get_pretty_name_db_backend(vendor):
     if vendor == "sqlite3":
         return "SQLite3"
     return vendor
-
-
-def championships(request):
-    championships = Tournament.objects.filter(
-        Q(tournament_type=Tournament.CHAMPIONSHIP) | Q(russian_cup=True)
-    ).order_by("-end_date")
-
-    return render(request, "website/championships.html", {"championships": championships})
 
 
 def contacts(request):

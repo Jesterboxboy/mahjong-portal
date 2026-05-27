@@ -86,8 +86,8 @@ class Command(BaseCommand):
             player = result.player
             players[player.ema_id] = {
                 "place": result.place,
-                "last_name": player.last_name_en,
-                "first_name": player.first_name_en,
+                "last_name": player.last_name,
+                "first_name": player.first_name,
                 "scores": int(floatformat(result.score, 0)),
                 "ema_id": player.ema_id,
                 "country_code": player.country.code,

@@ -4,7 +4,6 @@ from django.urls import re_path as url
 
 from website.views import (
     about,
-    championships,
     city_page,
     contacts,
     ermc_qualification_2019,
@@ -32,7 +31,6 @@ urlpatterns = [
     url(r"^wrc/2025/$", wrc_qualification_2025, name="wrc_qualification_2025"),
     url(r"^rating/faq/$", rating_faq, name="rating_faq"),
     url(r"^contacts/$", contacts, name="contacts"),
-    url(r"^championships/$", championships, name="championships"),
     url(r"^online/$", online_tournament_rules, name="online"),
     url(r"^search/$", search, name="search"),
     url(r"^server/$", server, name="server"),

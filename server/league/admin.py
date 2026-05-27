@@ -14,7 +14,7 @@ class LeagueForm(forms.ModelForm):
 
 class LeagueAdmin(admin.ModelAdmin):
     form = LeagueForm
-    prepopulated_fields = {"slug": ["name_en"]}
+    prepopulated_fields = {"slug": ["name"]}
 
     list_display = ["name", "start_date", "end_date"]
 
