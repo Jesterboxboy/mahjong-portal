@@ -38,6 +38,9 @@ from online.views import (
     send_team_names_to_pantheon,
 )
 from website.views import finished_tournaments_api, players_api, update_info_from_pantheon_api
+from filebrowser.sites import site as filebrowser_site
+
+_fb_patterns, _fb_app, _fb_ns = filebrowser_site.urls
 
 sitemaps = {
     "static": StaticSitemap,
@@ -51,6 +54,7 @@ sitemaps = {
 }
 
 urlpatterns = [
+    url(r"^admin/", include((_fb_patterns, _fb_app), namespace=_fb_ns)),
     url(r"^admin/", include(admin.site.urls[:2])),
     url(r"^i18n/", include("django.conf.urls.i18n")),
     url(
@@ -80,6 +84,7 @@ urlpatterns = [
     url("^api/v0/autobot/check_player$", check_player),
     url(r"^online/", include("online.urls")),
     url("i18n/", include("django.conf.urls.i18n")),
+    url(r"^tinymce/", include("tinymce.urls")),
 ]
 
 urlpatterns += i18n_patterns(

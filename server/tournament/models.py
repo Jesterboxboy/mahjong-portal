@@ -4,6 +4,7 @@ import ujson as json
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from filebrowser.fields import FileBrowseField
 
 from club.models import Club
 from mahjong_portal.models import BaseModel
@@ -128,7 +129,15 @@ class Tournament(BaseModel):
         upload_to="tournament/gdpr/",
         null=True,
         blank=True,
-        verbose_name=_("GDPR document (PDF)"),
+        verbose_name=_("GDPR document (PDF) — direct upload"),
+    )
+    gdpr_file = FileBrowseField(
+        _("GDPR document (from media library)"),
+        max_length=200,
+        directory="gdpr/",
+        extensions=[".pdf", ".doc", ".docx"],
+        null=True,
+        blank=True,
     )
     online_config = models.ForeignKey(OnlineTournamentConfig, on_delete=models.PROTECT, null=True, blank=True)
 

@@ -260,3 +260,82 @@ Name it "Set Yearly Club Fee status", upon selection ask for the year, and add a
 
 **`templates/admin/player/set_club_fee.html`** (new)
 - Extends `admin/base_site.html`; shows player count, year number input, hidden `_selected_action` fields for the queryset PKs, and a submit button
+
+# Improvement 13 ✓ DONE
+Add django-tinymce wysiwig to the project and make the following fields editable with it.
+in admin/tournament/tournament/
+ Tournament info tab
+
+in admin/news/newsarticle/
+  Excerpt and body
+
+### Implementation
+
+**`requirements/base.txt`**
+- Added `django-tinymce==5.0.0`
+
+**`mahjong_portal/settings.py`**
+- Added `"tinymce"` to `INSTALLED_APPS`
+- Added `TINYMCE_DEFAULT_CONFIG` with toolbar: bold/italic/underline, lists, link, image, table, code; height 300px
+- Added `TINYMCE_FILEBROWSER = True` (wires TinyMCE image picker to filebrowser — see Imp 14)
+- Fixed `STORAGES` dict to include `"default"` key (required by Django 5 when `STORAGES` is explicitly defined)
+
+**`mahjong_portal/urls.py`**
+- Added `url(r"^tinymce/", include("tinymce.urls"))` for TinyMCE JS/spellcheck endpoints
+
+**`tournament/admin.py`**
+- Added `from tinymce.widgets import TinyMCE`
+- `TournamentForm.Meta.widgets`: maps all 12 info fields to `TinyMCE()` — `venue_address`, `schedule`, `lunch_options`, `contact_info` plus their `_de` and `_en` translation variants
+
+**`news/admin.py`**
+- Replaced `format_html` / `image_preview` with `TinyMCE()` widgets on `excerpt` and `body` via `get_form()` override
+- Removed `image_preview` from `list_display`
+
+
+# Improvement 14 ✓ DONE
+
+ Add django-filebrowser to the project so i can add files and images and add them with django-tinymce.
+ Also remove the image section in admin/news/newsarticle.
+
+### Implementation
+
+**`requirements/base.txt`**
+- Added `django-filebrowser-no-grappelli==4.0.2` (filebrowser without Grappelli admin dependency)
+- Added `Pillow==12.2.0` (required by filebrowser for image processing)
+
+**`mahjong_portal/settings.py`**
+- Added `"filebrowser"` to `INSTALLED_APPS` **before** `"django.contrib.admin"` (required for template overrides)
+- `TINYMCE_FILEBROWSER = True` — TinyMCE's "Insert Image" button opens the filebrowser dialog
+
+**`mahjong_portal/urls.py`**
+- Imported `filebrowser_site` and unpacked its 3-tuple (`_fb_patterns, _fb_app, _fb_ns`)
+- Added `url(r"^admin/filebrowser/", include((_fb_patterns, _fb_app), namespace=_fb_ns))` — filebrowser accessible at `/admin/filebrowser/`
+
+**`news/admin.py`**
+- Added `exclude = ["image"]` to `NewsArticleAdmin` — image URL field hidden from admin form (model field retained to avoid migration)
+- Removed `image_preview` column from `list_display`
+
+**File browser usage**: navigate to `/admin/filebrowser/` to upload and manage files; use the "Upload" button; files are stored in `MEDIA_ROOT/uploads/` by default
+
+
+# Improvement 15 ✓ DONE
+Change the GDPR section in tournament/tournament so i can select an uploaded file with django-filebrowser.
+
+### Implementation
+
+**`tournament/models.py`**
+- Added `from filebrowser.fields import FileBrowseField`
+- Added `gdpr_file = FileBrowseField(…, directory="gdpr/", extensions=[".pdf", ".doc", ".docx"], null=True, blank=True)` alongside the existing `gdpr_document` FileField
+- Existing `gdpr_document` renamed verbose_name to "… direct upload" to distinguish it in admin
+
+**`tournament/migrations/0066_tournament_gdpr_file.py`** (manual)
+- `AddField` for `gdpr_file` using `filebrowser.fields.FileBrowseField`; depends on `tournament.0065`; applied ✓
+
+**`tournament/admin.py`**
+- GDPR fieldset now shows both `gdpr_document` (direct upload, backward-compat) and `gdpr_file` (filebrowser picker)
+
+**`templates/tournament/announcement.html`**
+- GDPR link: checks `tournament.gdpr_file` first (`{{ tournament.gdpr_file.url }}`); falls back to `tournament.gdpr_document.url`
+- Both Pantheon-registration and standard-registration form blocks updated
+
+**Workflow**: upload a PDF via the filebrowser (`/admin/filebrowser/`), then select it in the tournament's GDPR fieldset → link appears above the consent checkbox on the registration page

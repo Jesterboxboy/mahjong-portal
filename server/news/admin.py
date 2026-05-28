@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 
 from django.contrib import admin
-from django.utils.html import format_html
+from tinymce.widgets import TinyMCE
 
 from news.models import NewsArticle
 
 
 @admin.register(NewsArticle)
 class NewsArticleAdmin(admin.ModelAdmin):
-    list_display = ["title", "category", "published_date", "is_published", "image_preview"]
+    list_display = ["title", "category", "published_date", "is_published"]
     list_filter = ["is_published", "category"]
     search_fields = ["title", "excerpt"]
     prepopulated_fields = {"slug": ("title",)}
     date_hierarchy = "published_date"
     ordering = ["-published_date"]
+    exclude = ["image"]
 
-    def image_preview(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" style="max-height: 40px;" />', obj.image)
-        return "-"
-
-    image_preview.short_description = "Vorschau"
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields["excerpt"].widget = TinyMCE()
+        form.base_fields["body"].widget = TinyMCE()
+        return form

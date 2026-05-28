@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from modeltranslation.admin import TabbedTranslationAdmin
+from tinymce.widgets import TinyMCE
 
 from settings.models import Country
 from tournament.models import (
@@ -27,6 +28,20 @@ class TournamentForm(forms.ModelForm):
     class Meta:
         model = Tournament
         exclude = ["registration_description", "results_description"]
+        widgets = {
+            "venue_address": TinyMCE(),
+            "venue_address_de": TinyMCE(),
+            "venue_address_en": TinyMCE(),
+            "schedule": TinyMCE(),
+            "schedule_de": TinyMCE(),
+            "schedule_en": TinyMCE(),
+            "lunch_options": TinyMCE(),
+            "lunch_options_de": TinyMCE(),
+            "lunch_options_en": TinyMCE(),
+            "contact_info": TinyMCE(),
+            "contact_info_de": TinyMCE(),
+            "contact_info_en": TinyMCE(),
+        }
 
 
 class TournamentAdmin(TabbedTranslationAdmin):
@@ -51,7 +66,7 @@ class TournamentAdmin(TabbedTranslationAdmin):
                            "display_notes", "share_notes", "registration_link",
                            "old_pantheon_id", "new_pantheon_id", "ema_id", "online_config"]}),
         ("Tournament Info Tab", {"fields": ["venue_address", "schedule", "lunch_options", "contact_info"]}),
-        ("GDPR", {"fields": ["gdpr_document"]}),
+        ("GDPR", {"fields": ["gdpr_document", "gdpr_file"]}),
     ]
 
     def export(self, obj):

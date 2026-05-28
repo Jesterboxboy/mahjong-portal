@@ -39,3 +39,8 @@ pycurl==7.45.1
 
 # for monitoring
 sentry-sdk==1.25.1
+
+# WYSIWYG editor + media browser
+django-tinymce==5.0.0
+django-filebrowser-no-grappelli==4.0.2
+Pillow==12.2.0

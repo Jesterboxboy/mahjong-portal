@@ -51,7 +51,9 @@ CSRF_FAILURE_VIEW = "website.views.csrf_failure"
 INSTALLED_APPS = [
     # it had to be placed before contrib.admin
     "modeltranslation",
+    "filebrowser",
     "django.contrib.admin",
+    "tinymce",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -192,7 +194,20 @@ LOGGING = {
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "collected_static")
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-STORAGES = {"staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"}}
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"},
+}
+
+TINYMCE_FILEBROWSER = True
+TINYMCE_DEFAULT_CONFIG = {
+    "theme": "silver",
+    "height": 300,
+    "menubar": False,
+    "plugins": "link image lists table code",
+    "toolbar": "bold italic underline | bullist numlist | link image | table | code",
+    "content_css": False,
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")

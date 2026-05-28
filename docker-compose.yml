@@ -16,6 +16,7 @@ services:
     volumes:
       - ./server/:/app
       - ./server/shared/:/app/shared/
+      - ./media/:/app/media
     ports:
       - '8060:8060'
     networks:

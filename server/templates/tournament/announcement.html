@@ -96,12 +96,14 @@
                                     <form style="max-width: none" action="{% url 'pantheon_tournament_registration' tournament.id %}" method="POST">
                                         {% csrf_token %}
                                         {% for field in form %}
-                                            {% if field.name == 'allow_to_save_data' and tournament.gdpr_document %}
+                                            {% if field.name == 'allow_to_save_data' %}
+                                                {% if tournament.gdpr_file or tournament.gdpr_document %}
                                                 <p class="mb-1">
-                                                    <a href="{{ tournament.gdpr_document.url }}" target="_blank" rel="noopener">
+                                                    <a href="{% if tournament.gdpr_file %}{{ tournament.gdpr_file.url }}{% else %}{{ tournament.gdpr_document.url }}{% endif %}" target="_blank" rel="noopener">
                                                         {% trans 'View GDPR / data protection document (PDF)' %}
                                                     </a>
                                                 </p>
+                                                {% endif %}
                                             {% endif %}
                                             {% bootstrap_field field %}
                                         {% endfor %}
@@ -122,12 +124,14 @@
                             <form action="{% url 'tournament_registration' tournament.id %}" method="POST">
                                 {% csrf_token %}
                                 {% for field in form %}
-                                    {% if field.name == 'allow_to_save_data' and tournament.gdpr_document %}
+                                    {% if field.name == 'allow_to_save_data' %}
+                                        {% if tournament.gdpr_file or tournament.gdpr_document %}
                                         <p class="mb-1">
-                                            <a href="{{ tournament.gdpr_document.url }}" target="_blank" rel="noopener">
+                                            <a href="{% if tournament.gdpr_file %}{{ tournament.gdpr_file.url }}{% else %}{{ tournament.gdpr_document.url }}{% endif %}" target="_blank" rel="noopener">
                                                 {% trans 'View GDPR / data protection document (PDF)' %}
                                             </a>
                                         </p>
+                                        {% endif %}
                                     {% endif %}
                                     {% bootstrap_field field %}
                                 {% endfor %}
