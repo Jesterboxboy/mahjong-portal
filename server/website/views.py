@@ -28,6 +28,7 @@ from player.models import Player, PlayerQuotaEvent
 from player.player_helper import PlayerHelper
 from player.tenhou.models import TenhouAggregatedStatistics, TenhouNickname
 from player.tenhou.tenhou_helper import TenhouHelper
+from vereinsmitglieder.models import Mitgliedschaftsbeitrag
 from settings.models import City
 from tournament.models import Tournament, TournamentResult
 from utils.general import get_end_of_day
@@ -95,6 +96,46 @@ def _annotate_used_foreign(rankings, period):
         ranking.used_foreign_pks = top3_by_player.get(ranking.ema_id, set())
 
 
+def _annotate_unpaid_results(rankings, period):
+    """
+    Attach unpaid_result_pks (set of EmaTournamentResult PKs excluded due to unpaid fees)
+    to each ranking row.
+    """
+    if not period or not rankings:
+        for r in rankings:
+            r.unpaid_result_pks = set()
+        return
+
+    # Get ema_id -> portal Player lookup
+    ema_ids = [r.ema_id for r in rankings]
+    player_by_ema = {
+        p.ema_id: p for p in Player.objects.filter(ema_id__in=ema_ids) if p.ema_id
+    }
+
+    # Get paid years per player pk
+    player_pks = [p.pk for p in player_by_ema.values()]
+    pk_to_ema = {p.pk: ema for ema, p in player_by_ema.items()}
+    # Initialize all portal players with empty set (no fees → everything unpaid)
+    # Players not in the portal (no match by ema_id) are left out → no fee restriction
+    paid_years_by_ema: dict[str, set] = {ema_id: set() for ema_id in player_by_ema}
+    for fee in Mitgliedschaftsbeitrag.objects.filter(player_id__in=player_pks):
+        eid = pk_to_ema[fee.player_id]
+        paid_years_by_ema[eid].add(fee.year)
+
+    # Find result PKs that are unpaid for each portal player
+    all_results = EmaTournamentResult.objects.filter(quota_period=period, points__gt=0)
+    unpaid_by_ema: dict[str, set] = {}
+    for r in all_results:
+        paid_years = paid_years_by_ema.get(r.ema_id)
+        if paid_years is None:
+            continue  # not in portal → no fee restriction → show as normal
+        if r.end_date and r.end_date.year not in paid_years:
+            unpaid_by_ema.setdefault(r.ema_id, set()).add(r.pk)
+
+    for ranking in rankings:
+        ranking.unpaid_result_pks = unpaid_by_ema.get(ranking.ema_id, set())
+
+
 def _annotate_attendance(rankings, period):
     """Attach attendance_status and has_seat to each ranking row."""
     intents = (
@@ -132,6 +173,7 @@ def rangliste(request):
         rankings = list(AustrianRanking.objects.filter(quota_period=current_period).select_related("player"))
         _annotate_used_foreign(rankings, current_period)
         _annotate_attendance(rankings, current_period)
+        _annotate_unpaid_results(rankings, current_period)
 
     return render(
         request,
@@ -151,6 +193,7 @@ def rangliste_period(request, pk: int):
     rankings = list(AustrianRanking.objects.filter(quota_period=period).select_related("player"))
     _annotate_used_foreign(rankings, period)
     _annotate_attendance(rankings, period)
+    _annotate_unpaid_results(rankings, period)
 
     return render(
         request,

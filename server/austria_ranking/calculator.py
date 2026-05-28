@@ -15,6 +15,7 @@ Final score per player:
 
 from austria_ranking.models import AustrianRanking, EmaTournamentResult
 from player.models import Player
+from vereinsmitglieder.models import Mitgliedschaftsbeitrag
 
 
 def calculate_points(player_count: int, position: int) -> int:
@@ -43,9 +44,13 @@ def rank_players_for_period(quota_period) -> list[dict]:
                 "foreign_results": [],
             }
         if r.is_austrian_tournament:
-            player_data[r.ema_id]["at_results"].append({"name": r.tournament_name, "points": r.points})
+            player_data[r.ema_id]["at_results"].append(
+                {"name": r.tournament_name, "points": r.points, "year": r.end_date.year if r.end_date else None}
+            )
         else:
-            player_data[r.ema_id]["foreign_results"].append({"name": r.tournament_name, "points": r.points})
+            player_data[r.ema_id]["foreign_results"].append(
+                {"name": r.tournament_name, "points": r.points, "year": r.end_date.year if r.end_date else None}
+            )
 
     # Build player → portal Player lookup by ema_id
     ema_ids = list(player_data.keys())
@@ -53,11 +58,33 @@ def rank_players_for_period(quota_period) -> list[dict]:
         p.ema_id: p for p in Player.objects.filter(ema_id__in=ema_ids) if p.ema_id
     }
 
+    # Build paid-years lookup:
+    # - ema_id in lookup → player is in the portal; only years in the set are counted
+    # - ema_id absent → player is not in the portal; no fee restriction (can't be managed)
+    player_pk_to_ema: dict[int, str] = {p.pk: ema_id for ema_id, p in player_lookup.items()}
+    paid_years_lookup: dict[str, set[int]] = {ema_id: set() for ema_id in player_lookup}
+    for fee in Mitgliedschaftsbeitrag.objects.filter(player_id__in=player_pk_to_ema.keys()):
+        ema_id = player_pk_to_ema[fee.player_id]
+        paid_years_lookup[ema_id].add(fee.year)
+
     # Score each player
     rankings = []
     for ema_id, data in player_data.items():
-        at_points = sum(r["points"] for r in data["at_results"])
-        top3_foreign = sorted(data["foreign_results"], key=lambda x: x["points"], reverse=True)[:3]
+        # None → player not in portal → no fee restriction; set → only those years count
+        portal_paid_years = paid_years_lookup.get(ema_id)
+
+        def _year_ok(result_item, _ppy=portal_paid_years):
+            if _ppy is None:
+                return True  # not a portal player → no fee tracking
+            year = result_item.get("year")
+            return year is None or year in _ppy
+
+        at_points = sum(r["points"] for r in data["at_results"] if _year_ok(r))
+        top3_foreign = sorted(
+            [r for r in data["foreign_results"] if _year_ok(r)],
+            key=lambda x: x["points"],
+            reverse=True,
+        )[:3]
         foreign_points = sum(r["points"] for r in top3_foreign)
         total_points = at_points + foreign_points
         rankings.append(

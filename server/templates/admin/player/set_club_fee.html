@@ -1,0 +1,26 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Mitgliedschaftsbeitrag setzen</h1>
+<p>Für <strong>{{ player_count }} Spieler</strong> wird ein Eintrag für das gewählte Jahr angelegt (falls noch nicht vorhanden).</p>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="set_yearly_club_fee">
+    {% for pk in player_pks %}
+        <input type="hidden" name="_selected_action" value="{{ pk }}">
+    {% endfor %}
+    <input type="hidden" name="confirmed" value="1">
+
+    <p>
+        <label for="fee_year"><strong>Jahr:</strong></label>
+        <input type="number" id="fee_year" name="fee_year" value="{{ default_year }}"
+               min="2000" max="2099" required style="width:100px">
+    </p>
+
+    <p>
+        <input type="submit" value="Beitrag eintragen" class="default">
+        &nbsp;
+        <a href="#" onclick="history.back(); return false;">Abbrechen</a>
+    </p>
+</form>
+{% endblock %}

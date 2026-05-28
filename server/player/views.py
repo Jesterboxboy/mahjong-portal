@@ -13,6 +13,7 @@ from player.tenhou.models import TenhouAggregatedStatistics, TenhouGameLog, Tenh
 from rating.models import ExternalRating, ExternalRatingDelta, Rating, RatingDelta, RatingResult, TournamentCoefficients
 from rating.utils import get_latest_rating_date, parse_rating_date
 from tournament.models import TournamentResult
+from vereinsmitglieder.models import Mitgliedschaftsbeitrag
 
 
 def player_by_id_details(request, player_id):
@@ -71,6 +72,15 @@ def player_details(request, slug, year=None, month=None, day=None):
         ClubRating.objects.filter(player=player).prefetch_related("club", "club__city").order_by("-games_count")
     )
 
+    from datetime import date as _date
+
+    current_year = _date.today().year
+    fee_years = [current_year, current_year - 1, current_year - 2]
+    paid_year_set = set(
+        Mitgliedschaftsbeitrag.objects.filter(player=player, year__in=fee_years).values_list("year", flat=True)
+    )
+    membership_fees = [{"year": y, "paid": y in paid_year_set} for y in fee_years]
+
     return render(
         request,
         "player/details.html",
@@ -85,6 +95,7 @@ def player_details(request, slug, year=None, month=None, day=None):
             "ms_data": ms_data,
             "club_ratings": club_ratings,
             "tournaments_data": tournaments_data,
+            "membership_fees": membership_fees,
         },
     )
 

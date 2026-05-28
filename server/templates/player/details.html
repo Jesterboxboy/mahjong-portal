@@ -112,6 +112,42 @@
     </div>
     {% endif %}
 
+    {# ── Membership Fees ──────────────────────────────────────────────── #}
+    {% if membership_fees %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white d-flex align-items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5m-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5"/></svg>
+                <strong>Mitgliedschaftsbeitrag</strong>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Jahr</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee in membership_fees %}
+                        <tr>
+                            <td class="ps-3">{{ fee.year }}</td>
+                            <td>
+                                {% if fee.paid %}
+                                    <span class="text-success fw-bold">&#10003;</span>
+                                {% else %}
+                                    <span class="text-danger fw-bold">&#10007;</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {# ── Latest Tournaments ───────────────────────────────────────────── #}
     {% if tournament_results %}
     <div class="col-12">

@@ -162,3 +162,101 @@ There are already "Run Calculation" buttons in http://localhost:8060/admin/austr
 **`docker/django/crontab`**
 - Added `50 1 * * * python /app/manage.py calculate_austrian_ranking` (runs at 01:50, after the EMA rating job)
 
+
+# Improvement 8 ✓ DONE
+move functionality of the run calculation buttons in austria_ranking/quotaevents to the action dropdown menu instead of buttons as it is now.
+
+### Implementation
+
+**`austria_ranking/admin.py`**
+- Removed `run_button` method and `"run_button"` from `list_display`
+- Removed `from django.urls import reverse` and `from django.utils.html import format_html` imports
+- Added module-level action function `run_ranking_calculation(modeladmin, request, queryset)`: iterates the selected queryset, calls `scraper.run_full_scrape(period)` + `calculator.rank_players_for_period(period)`, updates `calculated_at`, and shows a success message
+- Added `actions = [run_ranking_calculation]` to `QuotaEventAdmin`
+
+**`mahjong_portal/urls.py`**
+- Removed `from austria_ranking.views import run_ranking_calculation` import
+- Removed `url(r"^admin/austria-ranking/(?P<pk>\d+)/run/$", ...)` URL entry
+
+**`austria_ranking/views.py`**
+- Removed the now-unused `run_ranking_calculation` view and all its imports; file reduced to a single encoding comment
+
+**`templates/website/rangliste.html`**
+- Removed the staff-only "Calculate now" link that referenced the deleted `austria_ranking_run` URL
+
+# Improvement 9 ✓ DONE
+* Add an additional app "Vereinsmitglieder" that tracks active club members and fees per year.
+  Create a model Mitgliedschaftsbeitrag that has the following fields.
+  year, foreign key top player, but also display the player name and first name in the table view.
+  Allow filtering by year.
+  So if a player has payed his yearly fee i will add him to this list.
+
+### Implementation
+
+**`vereinsmitglieder/` (new app)**
+- `models.py`: `Mitgliedschaftsbeitrag` with `year = PositiveIntegerField()` and `player = ForeignKey('player.Player', related_name='membership_fees')`; `unique_together = [['year', 'player']]`; default ordering by `-year, last_name, first_name`
+- `admin.py`: `MitgliedschaftsbeitragAdmin` with `list_display = ['year', 'player_last_name', 'player_first_name']`, `list_filter = ['year']`, `raw_id_fields = ['player']`, `search_fields` on player name; `player_last_name` and `player_first_name` are display methods with `admin_order_field`
+- `apps.py`, `__init__.py`, `migrations/__init__.py` created
+- `migrations/0001_initial.py`: manually crafted (no `makemigrations` in Docker); depends on `player.0020`
+
+**`mahjong_portal/settings.py`**
+- Added `"vereinsmitglieder"` to `INSTALLED_APPS`
+
+**Migration applied**: `vereinsmitglieder.0001_initial` — OK
+
+# Improvement 10 ✓ DONE
+Show an additional section under de/players/player for each player with the information if he has payed his club fee for the last three years.
+show him a column of years descending, with a checkmark or an x named Membership fees payed.
+
+### Implementation
+
+**`player/views.py`**
+- Added `from vereinsmitglieder.models import Mitgliedschaftsbeitrag`
+- In `player_details()`: computes `fee_years = [current_year, current_year-1, current_year-2]`, queries `Mitgliedschaftsbeitrag` for those years, builds `membership_fees = [{year, paid}, ...]`
+- Passes `membership_fees` in the render context
+
+**`templates/player/details.html`**
+- Added a new Bootstrap card "Mitgliedschaftsbeitrag" (green header, bill-list icon) between the Ratings section and the Latest Tournaments section
+- Shows a two-column table (Jahr / Status) with ✓ (`text-success`) or ✗ (`text-danger`) per year
+- Card is always rendered when `membership_fees` is in context (list is always populated for the last 3 years)
+
+
+# Improvement 11 ✓ DONE
+in quota event, only count tournaments in a given year to a player if he has payed his fees for this year.
+Under details, still show the tournament entries but color them light red and if mouseover display "Fee for xxxx not payed" (where xxxx is the year.)
+
+### Implementation
+
+**`austria_ranking/calculator.py`**
+- Added `from vereinsmitglieder.models import Mitgliedschaftsbeitrag`
+- After building `player_lookup`, initialises `paid_years_lookup` with an **empty `set()`** for every portal player (key absent → player not in portal → no restriction; empty set → in portal, no fees paid → nothing counted)
+- Fills in paid years from `Mitgliedschaftsbeitrag`; players not in the portal are simply absent from the lookup
+- `_year_ok()` closure: returns `True` only if the result's year is in the player's paid-year set (or if the player is not tracked in the portal)
+- Result dicts store `"year": r.end_date.year` so `_year_ok` can check it; closure captures `portal_paid_years` via default-arg to avoid late-binding issues
+- AT points and foreign top-3 are computed only over fee-valid results
+
+**`website/views.py`**
+- Added `from vereinsmitglieder.models import Mitgliedschaftsbeitrag`
+- `_annotate_unpaid_results(rankings, period)`: initialises `paid_years_by_ema` with an **empty `set()`** for every portal player (same sentinel logic as calculator); fills paid years from `Mitgliedschaftsbeitrag`; iterates all `EmaTournamentResult` for the period; marks result PKs as unpaid when `end_date.year not in paid_years`; players not in the portal are skipped (no restriction)
+- Called in both `rangliste()` and `rangliste_period()` after the existing annotators
+
+**`templates/website/rangliste.html`**
+- Austrian tournament rows: `class="table-danger" title="Fee for {{ r.end_date.year }} not payed"` when `r.pk in ranking.unpaid_result_pks`, otherwise `class="table-success"`
+- Foreign tournament rows: same `table-danger` override takes priority over `table-success` for used-foreign-top-3 rows
+
+
+# Improvement 12 ✓ DONE
+Add an dropwdpown action to player/player so i can bulk add entries to Mitgliedschaftsbeiträge for players.
+Name it "Set Yearly Club Fee status", upon selection ask for the year, and add an entry to Mitgliedschaftsbeiträge if it doesnt already exist.
+
+### Implementation
+
+**`player/admin.py`**
+- Added `set_yearly_club_fee(modeladmin, request, queryset)` module-level action
+- First call (no `confirmed` POST key): renders intermediate template with selected player PKs as hidden fields and a year input (defaults to current year)
+- Second call (`confirmed=1`): reads `fee_year` from POST, calls `Mitgliedschaftsbeitrag.objects.get_or_create(player=player, year=year)` for each selected player, reports how many were created vs already existed
+- Added `actions = [set_yearly_club_fee]` to `PlayerAdmin`
+- Added imports: `date`, `messages`, `render`, `Mitgliedschaftsbeitrag`
+
+**`templates/admin/player/set_club_fee.html`** (new)
+- Extends `admin/base_site.html`; shows player count, year number input, hidden `_selected_action` fields for the queryset PKs, and a submit button

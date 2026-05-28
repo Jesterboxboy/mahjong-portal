@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     "league",
     "news",
     "austria_ranking",
+    "vereinsmitglieder",
 ]
 
 MIDDLEWARE = [

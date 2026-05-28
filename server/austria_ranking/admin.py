@@ -1,24 +1,31 @@
 # -*- coding: utf-8 -*-
 
 from django.contrib import admin
-from django.urls import reverse
-from django.utils.html import format_html
+from django.utils import timezone
 
 from austria_ranking.models import AustrianRanking, EmaTournamentResult, QuotaEvent
 
 
+def run_ranking_calculation(modeladmin, request, queryset):
+    from austria_ranking import calculator, scraper
+
+    for period in queryset:
+        scraper.run_full_scrape(period)
+        calculator.rank_players_for_period(period)
+        period.calculated_at = timezone.now()
+        period.save(update_fields=["calculated_at"])
+    modeladmin.message_user(request, f"Ranking calculation complete for {queryset.count()} event(s).")
+
+
+run_ranking_calculation.short_description = "Run ranking calculation"
+
+
 @admin.register(QuotaEvent)
 class QuotaEventAdmin(admin.ModelAdmin):
-    list_display = ["name", "event_type", "start_date", "end_date", "seats_available", "calculated_at", "is_current", "run_button"]
+    list_display = ["name", "event_type", "start_date", "end_date", "seats_available", "calculated_at", "is_current"]
     list_filter = ["event_type", "is_current"]
     ordering = ["-end_date"]
-
-    def run_button(self, obj):
-        url = reverse("austria_ranking_run", args=[obj.pk])
-        return format_html('<a class="button" href="{}">Run Calculation</a>', url)
-
-    run_button.short_description = "Action"
-    run_button.allow_tags = True
+    actions = [run_ranking_calculation]
 
 
 @admin.register(EmaTournamentResult)
