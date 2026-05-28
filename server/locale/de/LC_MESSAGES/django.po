@@ -2535,3 +2535,6 @@ msgstr "Teile anderen mit, ob du planst, an einem Qualifikationsevent teilzunehm
 
 msgid "Quota Event"
 msgstr "Quota-Event"
+
+msgid "Fee for %(year)s not payed"
+msgstr "Mitgliedsbeitrag für %(year)s nicht bezahlt"

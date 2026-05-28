@@ -86,7 +86,8 @@
                                     <tbody>
                                     {% for r in ranking.quota_period.ema_results.all %}
                                         {% if r.ema_id == ranking.ema_id and r.is_austrian_tournament and r.points > 0 %}
-                                        <tr{% if r.pk in ranking.unpaid_result_pks %} class="table-danger" title="Fee for {{ r.end_date.year }} not payed"{% else %} class="table-success"{% endif %}>
+                                        {% if r.pk in ranking.unpaid_result_pks %}{% blocktrans with year=r.end_date.year asvar fee_title %}Fee for {{ year }} not payed{% endblocktrans %}{% endif %}
+                                        <tr{% if r.pk in ranking.unpaid_result_pks %} class="table-danger" title="{{ fee_title }}"{% else %} class="table-success"{% endif %}>
                                             <td>{% if r.ema_tournament_url %}<a href="{{ r.ema_tournament_url }}" target="_blank" rel="noopener">{{ r.tournament_name }}</a>{% else %}{{ r.tournament_name }}{% endif %}</td>
                                             <td class="text-end">{{ r.points }}</td>
                                         </tr>
@@ -102,7 +103,8 @@
                                     <tbody>
                                     {% for r in ranking.quota_period.ema_results.all|dictsortreversed:"points" %}
                                         {% if r.ema_id == ranking.ema_id and not r.is_austrian_tournament and r.points > 0 %}
-                                        <tr{% if r.pk in ranking.unpaid_result_pks %} class="table-danger" title="Fee for {{ r.end_date.year }} not payed"{% elif r.pk in ranking.used_foreign_pks %} class="table-success"{% endif %}>
+                                        {% if r.pk in ranking.unpaid_result_pks %}{% blocktrans with year=r.end_date.year asvar fee_title %}Fee for {{ year }} not payed{% endblocktrans %}{% endif %}
+                                        <tr{% if r.pk in ranking.unpaid_result_pks %} class="table-danger" title="{{ fee_title }}"{% elif r.pk in ranking.used_foreign_pks %} class="table-success"{% endif %}>
                                             <td>{% if r.ema_tournament_url %}<a href="{{ r.ema_tournament_url }}" target="_blank" rel="noopener">{{ r.tournament_name }}</a>{% else %}{{ r.tournament_name }}{% endif %} <span class="text-muted small">({{ r.tournament_country_code|upper }})</span></td>
                                             <td class="text-end">{{ r.points }}</td>
                                         </tr>
