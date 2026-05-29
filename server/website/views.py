@@ -28,10 +28,10 @@ from player.models import Player, PlayerQuotaEvent
 from player.player_helper import PlayerHelper
 from player.tenhou.models import TenhouAggregatedStatistics, TenhouNickname
 from player.tenhou.tenhou_helper import TenhouHelper
-from vereinsmitglieder.models import Mitgliedschaftsbeitrag
 from settings.models import City
 from tournament.models import Tournament, TournamentResult
 from utils.general import get_end_of_day
+from vereinsmitglieder.models import Mitgliedschaftsbeitrag
 
 logger = logging.getLogger()
 OLD_PANTHEON_TYPE = "old"

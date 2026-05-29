@@ -8,6 +8,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import re_path as url
 from django.views.decorators.cache import cache_page
 from django.views.static import serve
+from filebrowser.sites import site as filebrowser_site
 
 from mahjong_portal.sitemap import (
     ClubSitemap,
@@ -38,7 +39,6 @@ from online.views import (
     send_team_names_to_pantheon,
 )
 from website.views import finished_tournaments_api, players_api, update_info_from_pantheon_api
-from filebrowser.sites import site as filebrowser_site
 
 _fb_patterns, _fb_app, _fb_ns = filebrowser_site.urls
 

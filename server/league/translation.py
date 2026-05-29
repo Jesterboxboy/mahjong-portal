@@ -4,7 +4,6 @@ from modeltranslation.translator import TranslationOptions, translator
 
 from player.models import PlayerTitle
 
-
 # Player first/last names are language-independent — no translation needed.
 
 
