@@ -5,9 +5,39 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h1 class="mb-0">{% trans "Rankings" %}</h1>
+<h1 class="mb-3">{% trans "Rankings" %}</h1>
 
+    {% if qualification_mode_info.info_text %}
+    <div class="card mb-4">
+        <div class="card-header fw-bold">Informationen zum Qualifikationsmodus</div>
+        <div class="card-body">
+            {{ qualification_mode_info.info_text|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if period.event_info %}
+    <div class="card mb-4">
+        <div class="card-header fw-bold">Eventinformation</div>
+        <div class="card-body">
+            {{ period.event_info|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if rankings %}
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        {% if period %}
+        <p class="text-muted small mb-0">
+            {% trans "Qualification period" %}: {{ period.start_date|date:"d.m.Y" }} – {{ period.end_date|date:"d.m.Y" }}
+            {% if period.seats_available %}
+            &middot; <strong>{{ period.seats_remaining }}/{{ period.seats_available }}</strong> {% trans "seats available" %}
+            {% endif %}
+            {% if period.calculated_at %}
+            &middot; {% trans "Last calculation" %}: {{ period.calculated_at|date:"d.m.Y H:i" }}
+            {% endif %}
+        </p>
+        {% else %}<div></div>{% endif %}
         {% if all_periods %}
         <form method="get" class="d-flex align-items-center gap-2">
             <label for="periodSelect" class="text-muted small mb-0">{% trans "Event" %}:</label>
@@ -22,20 +52,6 @@
         </form>
         {% endif %}
     </div>
-
-    {% if period %}
-        <p class="text-muted small">
-            {% trans "Event" %}: {{ period.start_date|date:"d.m.Y" }} – {{ period.end_date|date:"d.m.Y" }}
-            {% if period.seats_available %}
-            &middot; <strong>{{ period.seats_available }}</strong> {% trans "seats available" %}
-            {% endif %}
-            {% if period.calculated_at %}
-            &middot; {% trans "Last calculation" %}: {{ period.calculated_at|date:"d.m.Y H:i" }}
-            {% endif %}
-        </p>
-    {% endif %}
-
-    {% if rankings %}
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead class="table-dark">
@@ -45,7 +61,7 @@
                     <th class="text-end">AT-Punkte</th>
                     <th class="text-end">Ausland (Top 3)</th>
                     <th class="text-end fw-bold">Gesamt</th>
-                    <th></th>
+                    {% if user.is_authenticated %}<th></th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -53,16 +69,21 @@
                 <tr{% if ranking.attendance_status == "yes" %} style="--bs-table-bg:#e8f5e9;"{% elif ranking.attendance_status == "no" %} style="--bs-table-bg:#ffebee;"{% endif %}>
                     <td class="fw-bold">{{ ranking.rank_position }}</td>
                     <td>
-                        {% if ranking.player %}
+                        {% if user.is_authenticated and ranking.player %}
                             <a href="{% url 'player_details' ranking.player.slug %}">{{ ranking.display_name }}</a>
-                        {% else %}
+                        {% elif user.is_authenticated %}
                             {{ ranking.display_name }}
+                        {% else %}
+                            {% with parts=ranking.display_name.split %}
+                                {{ parts.0 }}{% if parts|length > 1 %} {{ parts|last|slice:":1" }}.{% endif %}
+                            {% endwith %}
                         {% endif %}
-                        {% if ranking.has_seat %}<span class="text-success ms-1 fw-bold" title="{% trans 'Confirmed seat' %}">✓</span>{% endif %}
+                        {% if ranking.has_crown %}<span class="text-warning ms-1 fw-bold" title="{% trans 'Fixed seat' %}">👑</span>{% endif %}{% if user.is_authenticated and ranking.has_seat %}<span class="text-success ms-1 fw-bold" title="{% trans 'Confirmed seat' %}">✓</span>{% endif %}
                     </td>
                     <td class="text-end">{{ ranking.at_points }}</td>
                     <td class="text-end">{{ ranking.foreign_points }}</td>
                     <td class="text-end fw-bold">{{ ranking.total_points }}</td>
+                    {% if user.is_authenticated %}
                     <td>
                         <button class="btn btn-outline-secondary btn-sm"
                                 type="button"
@@ -72,12 +93,11 @@
                             Details
                         </button>
                     </td>
+                    {% endif %}
                 </tr>
+                {% if user.is_authenticated %}
                 <tr class="collapse" id="details-{{ ranking.pk }}">
                     <td colspan="6" class="py-2 px-4 bg-body-secondary">
-                        {% with at_results=ranking.quota_period.ema_results.all|dictsortreversed:"points" %}
-                        {% comment %}Load detail rows from EmaTournamentResult{% endcomment %}
-                        {% endwith %}
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <strong>Österreich-Turniere</strong>
@@ -116,6 +136,7 @@
                         </div>
                     </td>
                 </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>

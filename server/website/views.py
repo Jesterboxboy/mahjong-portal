@@ -21,7 +21,7 @@ from django.views.decorators.http import require_POST
 from haystack.forms import ModelSearchForm
 
 from account.models import PantheonInfoUpdateLog, User
-from austria_ranking.models import AustrianRanking, EmaTournamentResult, EventAttendanceIntent, QuotaEvent
+from austria_ranking.models import AustrianRanking, EmaTournamentResult, EventAttendanceIntent, QualificationModeInfo, QuotaEvent
 from club.models import Club
 from news.models import NewsArticle
 from player.models import Player, PlayerQuotaEvent
@@ -135,7 +135,12 @@ def _annotate_unpaid_results(rankings, period):
 
 
 def _annotate_attendance(rankings, period):
-    """Attach attendance_status and has_seat to each ranking row."""
+    """Attach attendance_status, has_seat (✓) and has_crown (👑) to each ranking row.
+
+    Also sets period.seats_confirmed and period.seats_remaining for the template header.
+    Fixed-seat players always have a reserved slot; they show ✓ when confirmed, 👑 otherwise.
+    They reduce the pool of ranked seats available.
+    """
     intents = (
         EventAttendanceIntent.objects.filter(quota_period=period)
         .exclude(status=EventAttendanceIntent.UNKNOWN)
@@ -147,19 +152,47 @@ def _annotate_attendance(rankings, period):
         if player and player.ema_id:
             attendance_map[player.ema_id] = intent.status
 
-    # Determine which players have a guaranteed seat (first seats_available
-    # confirmed-attending players, ordered by rank_position ascending).
-    seated_ema_ids: set[str] = set()
+    # Fixed seat players — hold a slot regardless of ranking
+    fixed_ema_ids: set[str] = set()
+    if period.seats_available is not None:
+        fixed_ema_ids = {
+            p.ema_id
+            for p in period.fixed_seat_players.filter(ema_id__isnull=False).exclude(ema_id="")
+        }
+
+    confirmed_fixed: set[str] = {
+        eid for eid in fixed_ema_ids if attendance_map.get(eid) == EventAttendanceIntent.ATTENDING
+    }
+
+    # Ranked seats = total seats minus slots reserved for fixed players
+    ranked_seat_count = max(0, (period.seats_available or 0) - len(fixed_ema_ids))
+
+    # Top ranked_seat_count confirmed-attending NON-fixed players earn a seat
+    ranked_seated: set[str] = set()
     if period.seats_available:
-        attending_by_rank = sorted(
-            (r for r in rankings if attendance_map.get(r.ema_id) == EventAttendanceIntent.ATTENDING),
+        attending_ranked = sorted(
+            (
+                r
+                for r in rankings
+                if r.ema_id not in fixed_ema_ids
+                and attendance_map.get(r.ema_id) == EventAttendanceIntent.ATTENDING
+            ),
             key=lambda r: r.rank_position,
         )
-        seated_ema_ids = {r.ema_id for r in attending_by_rank[: period.seats_available]}
+        ranked_seated = {r.ema_id for r in attending_ranked[:ranked_seat_count]}
+
+    all_seated: set[str] = confirmed_fixed | ranked_seated
+
+    # Attach seat counts to the period for the template x/y header
+    seats_confirmed = len(all_seated)
+    period.seats_confirmed = seats_confirmed
+    period.seats_remaining = max(0, (period.seats_available or 0) - seats_confirmed) if period.seats_available else None
 
     for ranking in rankings:
         ranking.attendance_status = attendance_map.get(ranking.ema_id, EventAttendanceIntent.UNKNOWN)
-        ranking.has_seat = ranking.ema_id in seated_ema_ids
+        ranking.has_seat = ranking.ema_id in all_seated
+        # Crown = fixed seat player (confirmed or not); shown alongside ✓ when confirmed
+        ranking.has_crown = ranking.ema_id in fixed_ema_ids
 
 
 def rangliste(request):
@@ -181,6 +214,7 @@ def rangliste(request):
             "period": current_period,
             "all_periods": all_periods,
             "rankings": rankings,
+            "qualification_mode_info": QualificationModeInfo.get_solo(),
         },
     )
 
@@ -201,6 +235,7 @@ def rangliste_period(request, pk: int):
             "period": period,
             "all_periods": all_periods,
             "rankings": rankings,
+            "qualification_mode_info": QualificationModeInfo.get_solo(),
         },
     )
 

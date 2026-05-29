@@ -339,3 +339,87 @@ Change the GDPR section in tournament/tournament so i can select an uploaded fil
 - Both Pantheon-registration and standard-registration form blocks updated
 
 **Workflow**: upload a PDF via the filebrowser (`/admin/filebrowser/`), then select it in the tournament's GDPR fieldset → link appears above the consent checkbox on the registration page
+
+# Improvement 16
+Add a mode in ausitran rankings that holds a text-field and is shown on top of de/rangliste that holds general information about quote events, make it editable with tinymce in the backend for de and en(with tabs)call it Informationen zum Qualifikationsmodus
+Add a text-field for the quota events that is displayed above the quota Rangliste but below the Qualifikationsmouds in de/rangliste/  for informations about thespecific Quota event. Call it Eventinformation
+where one can enter information about the quota events. Make it editable with tinymce in the backend.
+
+### Implementation
+
+**`austria_ranking/models.py`**
+- `QuotaEvent`: added `event_info = TextField(null=True, blank=True)` — bilingual via modeltranslation (`event_info_de`, `event_info_en`)
+- New `QualificationModeInfo` singleton model with `info_text = TextField` (bilingual) and a `get_solo()` classmethod that returns or creates `pk=1`; `has_add_permission` in admin hides "Add" once the singleton exists
+
+**`austria_ranking/translation.py`** (new)
+- Registers `QuotaEvent` with `fields = ["event_info"]` and `QualificationModeInfo` with `fields = ["info_text"]` → creates `_de`/`_en` DB columns; `TabbedTranslationAdmin` shows language tabs
+
+**`austria_ranking/admin.py`**
+- Added `from modeltranslation.admin import TabbedTranslationAdmin` and `from tinymce.widgets import TinyMCE`
+- `QuotaEventAdmin` now inherits `TabbedTranslationAdmin`; `get_form()` injects `TinyMCE()` widget for `event_info` fields
+- New `QualificationModeInfoAdmin(TabbedTranslationAdmin)` with TinyMCE for `info_text` fields
+
+**`austria_ranking/migrations/0005_improvement16_qualification_mode_info.py`** (manual)
+- `AddField` for `event_info`/`event_info_de`/`event_info_en` on `QuotaEvent`
+- `CreateModel` for `QualificationModeInfo` with `info_text`/`info_text_de`/`info_text_en`
+
+**`website/views.py`**
+- Imported `QualificationModeInfo`; passed `qualification_mode_info=QualificationModeInfo.get_solo()` in both `rangliste()` and `rangliste_period()` contexts
+
+**`templates/website/rangliste.html`**
+- Added a card block "Informationen zum Qualifikationsmodus" (shown when `qualification_mode_info.info_text` is set) rendered via `{{ ...|safe }}`
+- Added a card block "Eventinformation" below it (shown when `period.event_info` is set) for per-event info
+
+# Improvement 17
+only show first name and abbreviated Surname if user is not logged in in the Rangliste in de/rangliste
+i.e. Michael Gürtl-Dusleag becomes Michael G.
+Also don't show the detailsbutton.
+
+### Implementation
+
+**`templates/website/rangliste.html`**
+- Header row: `<th></th>` (Details column) wrapped in `{% if user.is_authenticated %}...{% endif %}`
+- Name cell: authenticated users see full name (with player profile link if available); anonymous users see `{{ parts.0 }} {{ parts|last|slice:":1" }}.` — first name + first letter of last name using Django's `split` variable filter
+- Details button `<td>` wrapped in `{% if user.is_authenticated %}...{% endif %}`
+- Details collapse `<tr>` wrapped in `{% if user.is_authenticated %}...{% endif %}` — anonymous users cannot expand any row details
+
+# Improvement 18
+The field Seats available: in Quota event should show a checkmark to the first x(where x is the number entered) players, that confirmed their attendance(stored in EventAttendanceIntent.status in austria_ranking)
+The column header should show x/y where x is the number of seats available minus confirmed players, and y is the Seats available for that event.
+
+### Implementation
+
+**`website/views.py` — `_annotate_attendance`**
+- Now computes `fixed_ema_ids` from `period.fixed_seat_players` M2M (see Improvement 19)
+- `ranked_seat_count = seats_available - len(fixed_ema_ids)` — ranked players compete only for non-fixed slots
+- `all_seated = confirmed_fixed | ranked_seated` — players with ✓
+- Attaches `period.seats_confirmed` and `period.seats_remaining` to the period object (dynamic attributes)
+
+**`templates/website/rangliste.html`**
+- Period info line changed from `<strong>{{ period.seats_available }}</strong>` to `<strong>{{ period.seats_remaining }}/{{ period.seats_available }}</strong>` — shows remaining/total
+
+# Improvement 19
+I need to be able to mark a random player as qualified for a quota event because of outside factors other than ranking. Add a list field to the quota event that holds one or more player references that have a fixed seat, mark these players with a checkmark if they confirmed their attendance, otherwise add a crown symbol if they have not confirmed attendance(read from EventAttendanceIntent.status)
+If they earn a checkmark deduct them from x as well as in improvement 18.
+
+### Implementation
+
+**`austria_ranking/models.py`**
+- `QuotaEvent`: added `fixed_seat_players = ManyToManyField(Player, blank=True, related_name="fixed_quota_events")` with help text
+
+**`austria_ranking/admin.py`**
+- `QuotaEventAdmin`: added `filter_horizontal = ["fixed_seat_players"]` — dual-select widget for assigning fixed-seat players
+
+**`austria_ranking/migrations/0006_quotaevent_fixed_seat_players.py`** (manual)
+- `AddField` for the M2M `fixed_seat_players` through-table
+
+**`website/views.py` — `_annotate_attendance`** (also covers Improvement 18)
+- `fixed_ema_ids`: EMA IDs of all fixed-seat players for the period
+- `confirmed_fixed`: subset that confirmed attendance → get ✓ and reduce `seats_remaining`
+- Non-confirmed fixed players → `ranking.has_crown = True` (not in `all_seated`)
+- `ranked_seat_count = seats_available - len(fixed_ema_ids)` (fixed players consume slots)
+- `ranking.has_crown` set for fixed players who haven't confirmed attendance
+
+**`templates/website/rangliste.html`**
+- Name cell: `{% elif ranking.has_crown %}<span class="text-warning ...">👑</span>{% endif %}` added after the ✓ check
+

@@ -1,9 +1,35 @@
 # -*- coding: utf-8 -*-
 
+from django import forms
 from django.contrib import admin
 from django.utils import timezone
 
-from austria_ranking.models import AustrianRanking, EmaTournamentResult, QuotaEvent
+from modeltranslation.admin import TabbedTranslationAdmin
+from tinymce.widgets import TinyMCE
+
+from austria_ranking.models import AustrianRanking, EmaTournamentResult, QualificationModeInfo, QuotaEvent
+
+
+class QuotaEventForm(forms.ModelForm):
+    class Meta:
+        model = QuotaEvent
+        fields = "__all__"
+        widgets = {
+            "event_info": TinyMCE(),
+            "event_info_de": TinyMCE(),
+            "event_info_en": TinyMCE(),
+        }
+
+
+class QualificationModeInfoForm(forms.ModelForm):
+    class Meta:
+        model = QualificationModeInfo
+        fields = "__all__"
+        widgets = {
+            "info_text": TinyMCE(),
+            "info_text_de": TinyMCE(),
+            "info_text_en": TinyMCE(),
+        }
 
 
 def run_ranking_calculation(modeladmin, request, queryset):
@@ -21,10 +47,12 @@ run_ranking_calculation.short_description = "Run ranking calculation"
 
 
 @admin.register(QuotaEvent)
-class QuotaEventAdmin(admin.ModelAdmin):
+class QuotaEventAdmin(TabbedTranslationAdmin):
+    form = QuotaEventForm
     list_display = ["name", "event_type", "start_date", "end_date", "seats_available", "calculated_at", "is_current"]
     list_filter = ["event_type", "is_current"]
     ordering = ["-end_date"]
+    filter_horizontal = ["fixed_seat_players"]
     actions = [run_ranking_calculation]
 
 
@@ -61,3 +89,12 @@ class AustrianRankingAdmin(admin.ModelAdmin):
     ]
     list_filter = ["quota_period"]
     ordering = ["rank_position"]
+
+
+@admin.register(QualificationModeInfo)
+class QualificationModeInfoAdmin(TabbedTranslationAdmin):
+    form = QualificationModeInfoForm
+
+    def has_add_permission(self, request):
+        # Only one instance allowed; hide "Add" if one already exists.
+        return not QualificationModeInfo.objects.exists()

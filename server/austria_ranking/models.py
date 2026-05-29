@@ -25,6 +25,19 @@ class QuotaEvent(models.Model):
         blank=True,
         help_text="If set, the first N confirmed-attending players earn a guaranteed seat (shown with ✓ in the ranking).",
     )
+    fixed_seat_players = models.ManyToManyField(
+        Player,
+        blank=True,
+        related_name="fixed_quota_events",
+        verbose_name="Fixed seat players",
+        help_text="Players with a guaranteed seat regardless of ranking. Shown with 👑 (unconfirmed) or ✓ (confirmed attendance).",
+    )
+    event_info = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Eventinformation",
+        help_text="Shown above the quota ranking table on the Rangliste page.",
+    )
 
     class Meta:
         ordering = ["-end_date"]
@@ -109,3 +122,25 @@ class EventAttendanceIntent(models.Model):
 
     def __str__(self):
         return f"{self.user} – {self.quota_period}: {self.status}"
+
+
+class QualificationModeInfo(models.Model):
+    """Singleton model holding the global qualification-mode description shown above the Rangliste."""
+
+    info_text = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Informationen zum Qualifikationsmodus",
+    )
+
+    class Meta:
+        verbose_name = "Qualifikationsmodus Info"
+        verbose_name_plural = "Qualifikationsmodus Info"
+
+    def __str__(self):
+        return "Qualifikationsmodus Info"
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
