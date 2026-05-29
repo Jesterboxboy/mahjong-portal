@@ -21,7 +21,13 @@ from django.views.decorators.http import require_POST
 from haystack.forms import ModelSearchForm
 
 from account.models import PantheonInfoUpdateLog, User
-from austria_ranking.models import AustrianRanking, EmaTournamentResult, EventAttendanceIntent, QualificationModeInfo, QuotaEvent
+from austria_ranking.models import (
+    AustrianRanking,
+    EmaTournamentResult,
+    EventAttendanceIntent,
+    QualificationModeInfo,
+    QuotaEvent,
+)
 from club.models import Club
 from news.models import NewsArticle
 from player.models import Player, PlayerQuotaEvent

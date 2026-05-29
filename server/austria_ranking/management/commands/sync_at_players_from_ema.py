@@ -49,11 +49,11 @@ class Command(BaseCommand):
 
         try:
             austria = Country.objects.get(code="AT")
-        except Country.DoesNotExist:
+        except Country.DoesNotExist as exc:
             raise CommandError(
                 "Country with code 'AT' not found in the database. "
                 "Create it in Django admin (Settings → Countries) first."
-            )
+            ) from exc
 
         self.stdout.write("Fetching Austrian player list from EMA website…")
         players = scrape_at_players()

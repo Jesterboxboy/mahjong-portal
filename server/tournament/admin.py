@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import re
 from datetime import date, datetime
 
 from django import forms
@@ -248,7 +247,7 @@ def create_tournament_from_application(modeladmin, request, queryset):
 
     modeladmin.message_user(
         request,
-        f'Tournament "{tournament.name}" created. Please review and complete the details.',
+        f"Tournament {tournament.name!r} created. Please review and complete the details.",
         level=messages.SUCCESS,
     )
     return HttpResponseRedirect(reverse("admin:tournament_tournament_change", args=[tournament.pk]))

@@ -9,7 +9,7 @@ from django.db.models import Sum
 from player.models import Player
 from player.tenhou.models import TenhouGameLog
 from settings.models import City
-from tournament.models import Tournament, TournamentResult
+from tournament.models import TournamentResult
 
 
 class Command(BaseCommand):

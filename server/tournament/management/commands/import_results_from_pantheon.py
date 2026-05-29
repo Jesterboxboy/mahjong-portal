@@ -30,11 +30,11 @@ class Command(BaseCommand):
 
         try:
             tournament = Tournament.objects.get(slug=slug)
-        except Tournament.DoesNotExist:
-            raise CommandError(f"Tournament with slug '{slug}' not found.")
+        except Tournament.DoesNotExist as exc:
+            raise CommandError(f"Tournament with slug {slug!r} not found.") from exc
 
         if not tournament.new_pantheon_id:
-            raise CommandError(f"Tournament '{slug}' has no new_pantheon_id set.")
+            raise CommandError(f"Tournament {slug!r} has no new_pantheon_id set.")
 
         self.stdout.write(f"Fetching results for Pantheon event {tournament.new_pantheon_id}...")
         response = get_rating_table(tournament.new_pantheon_id)

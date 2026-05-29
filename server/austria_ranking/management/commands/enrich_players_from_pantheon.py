@@ -88,7 +88,7 @@ class Command(BaseCommand):
                 continue
 
             if len(candidates) == 0:
-                self.stdout.write(f"  NO MATCH  {player} (EMA {player.ema_id}) — query: '{query}'")
+                self.stdout.write(f"  NO MATCH  {player} (EMA {player.ema_id}) — query: {query!r}")
                 skipped_no_match += 1
 
             elif len(candidates) == 1:
@@ -96,27 +96,27 @@ class Command(BaseCommand):
 
                 if player.pantheon_id == person.id:
                     self.stdout.write(
-                        f"  ALREADY SET  {player} (EMA {player.ema_id}) → Pantheon #{person.id} '{person.title}'"
+                        f"  ALREADY SET  {player} (EMA {player.ema_id}) → Pantheon #{person.id} {person.title!r}"
                     )
                     already_set += 1
                     continue
 
                 if dry_run:
                     self.stdout.write(
-                        f"  WOULD LINK  {player} (EMA {player.ema_id}) → Pantheon #{person.id} '{person.title}'"
+                        f"  WOULD LINK  {player} (EMA {player.ema_id}) → Pantheon #{person.id} {person.title!r}"
                     )
                 else:
                     player.pantheon_id = person.id
                     player.save(update_fields=["pantheon_id"])
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f"  LINKED  {player} (EMA {player.ema_id}) → Pantheon #{person.id} '{person.title}'"
+                            f"  LINKED  {player} (EMA {player.ema_id}) → Pantheon #{person.id} {person.title!r}"
                         )
                     )
                 matched += 1
 
             else:
-                names = ", ".join(f"#{p.id} '{p.title}'" for p in candidates)
+                names = ", ".join(f"#{p.id} {p.title!r}" for p in candidates)
                 self.stdout.write(
                     self.style.WARNING(
                         f"  AMBIGUOUS  {player} (EMA {player.ema_id}) — {len(candidates)} candidates: {names}"

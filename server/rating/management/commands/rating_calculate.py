@@ -9,7 +9,7 @@ from django.utils import timezone
 from rating.calculation.ema import RatingEMACalculation
 from rating.calculation.online import RatingOnlineCalculation
 from rating.models import Rating, RatingDate, RatingDelta, RatingResult
-from tournament.models import Tournament, TournamentResult
+from tournament.models import Tournament
 
 
 def get_date_string():

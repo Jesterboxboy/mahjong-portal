@@ -6,7 +6,6 @@ from django.test import TestCase
 
 from rating.calculation.ema import RatingEMACalculation
 from rating.mixins import RatingTestMixin
-from tournament.models import Tournament
 
 
 class EMARatingTestCase(TestCase, RatingTestMixin):

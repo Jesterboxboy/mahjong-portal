@@ -47,3 +47,25 @@ change translation in django.po then run
 ```
 docker compose exec -u root web python manage.py compilemessages
 ```
+
+## Code quality
+
+Before pushing, run the linters locally to avoid CI failures:
+
+```bash
+# Run all linters (isort + black + flake8)
+make lint
+
+# Auto-fix import order and code style
+make format
+```
+
+Individual targets:
+
+```bash
+make lint-isort            # check import order (mirrors CI)
+make lint-python-code-style  # check black formatting (mirrors CI)
+make lint-flake8           # check flake8 (mirrors CI)
+make format-isort          # fix import order
+make format-python-code    # fix black formatting
+```

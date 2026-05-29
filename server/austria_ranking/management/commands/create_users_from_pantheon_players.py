@@ -98,7 +98,7 @@ class Command(BaseCommand):
                 timeout=15,
             )
         except TwirpServerException as exc:
-            raise CommandError(f"Pantheon authentication failed: {exc}")
+            raise CommandError(f"Pantheon authentication failed: {exc}") from exc
 
         admin_ctx = Context(
             headers={
@@ -139,7 +139,7 @@ class Command(BaseCommand):
                 timeout=30,
             )
         except TwirpServerException as exc:
-            raise CommandError(f"Frey GetPersonalInfo failed: {exc}")
+            raise CommandError(f"Frey GetPersonalInfo failed: {exc}") from exc
 
         person_by_id = {person.id: person for person in response.people}
 
@@ -160,7 +160,7 @@ class Command(BaseCommand):
             if not email:
                 self.stdout.write(
                     self.style.WARNING(
-                        f"  NO EMAIL  {player} (pantheon_id={player.pantheon_id}, Frey '{person.title}') — skipping"
+                        f"  NO EMAIL  {player} (pantheon_id={player.pantheon_id}, Frey {person.title!r}) — skipping"
                     )
                 )
                 skipped += 1
@@ -168,7 +168,7 @@ class Command(BaseCommand):
 
             if dry_run:
                 self.stdout.write(
-                    f"  WOULD CREATE  User({email}) → Player '{player}' (pantheon_id={player.pantheon_id})"
+                    f"  WOULD CREATE  User({email}) → Player {player!r} (pantheon_id={player.pantheon_id})"
                 )
                 created += 1
                 continue
@@ -184,7 +184,7 @@ class Command(BaseCommand):
                 user.save(update_fields=["new_pantheon_id", "attached_player"])
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"  CREATED  User({email}) → Player '{player}' (pantheon_id={player.pantheon_id})"
+                        f"  CREATED  User({email}) → Player {player!r} (pantheon_id={player.pantheon_id})"
                     )
                 )
                 created += 1
@@ -192,7 +192,7 @@ class Command(BaseCommand):
                 # username (email) already taken by a different account
                 self.stdout.write(
                     self.style.WARNING(
-                        f"  DUPLICATE EMAIL  {email} already exists as a username — skipping Player '{player}'"
+                        f"  DUPLICATE EMAIL  {email} already exists as a username — skipping Player {player!r}"
                     )
                 )
                 skipped += 1

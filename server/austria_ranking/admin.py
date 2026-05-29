@@ -3,7 +3,6 @@
 from django import forms
 from django.contrib import admin
 from django.utils import timezone
-
 from modeltranslation.admin import TabbedTranslationAdmin
 from tinymce.widgets import TinyMCE
 
