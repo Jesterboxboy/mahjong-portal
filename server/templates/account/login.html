@@ -5,7 +5,8 @@
     <div class="col-lg-7">
         <h2>{% trans 'Login through Pantheon' %}</h2>
 
-        <p class="mb-2">{% trans 'Please use your login and password from https://rating.riichimahjong.org/ to login.'|urlize %}</p>
+        <p class="mb-2">{% trans 'Please use your login and password from https://rating.riichimahjong.at/ to login.'|urlize %}</p>
+        <p class="mb-2">{% trans 'If you do not yet have an account sign up at https://manage.riichimahjong.at/profile/signup .'|urlize %}</p>
         <p class="mt-0">{% trans 'We are not storing these credentials, they are used only during the login process.' %}</p>
 
         <form action="{% url 'do_login' %}" method="post" class="form-horizontal" role="form">

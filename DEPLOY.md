@@ -18,8 +18,8 @@ The stack uses `deploy/docker-compose.yml` which runs gunicorn on port **6101** 
 ## 1. Clone and configure
 
 ```bash
-git clone https://github.com/your-org/mahjong-portal.git /srv/mahjong-portal
-cd /srv/mahjong-portal/deploy
+git clone https://github.com/your-org/mahjong-portal.git /srv/docker-compose/mahjong-portal
+cd /srv/docker-compose/mahjong-portal/deploy
 ```
 
 Create the production env file:
@@ -59,47 +59,16 @@ The production compose mounts these bind paths under `deploy/files/`.
 Create them and ensure the container user (`UID 82` for Alpine's default, or match your image) can write:
 
 ```bash
-cd /srv/mahjong-portal/deploy
+cd /srv/docker-compose/mahjong-portal/deploy
 mkdir -p files/collected_static files/whoosh_index files/tmp files/shared files/media
 ```
 
 ---
 
-## 3. Update `deploy/docker-compose.yml` for media
-
-The upstream deploy compose does not yet include the `media_uploads` volume introduced
-for django-filebrowser. Add the media mount to both `web` and `cronjobs` services:
-
-```yaml
-volumes:
-  postgres_production_data: {}
-
-services:
-  web:
-    ...
-    volumes:
-      - ./files/collected_static:/app/collected_static/
-      - ./files/whoosh_index:/app/whoosh_index/
-      - ./files/tmp:/tmp
-      - ./files/shared/:/app/shared/
-      - ./files/media:/app/media          # ← add this line
-    ...
-
-  cronjobs:
-    ...
-    volumes:
-      - ./files/whoosh_index:/app/whoosh_index/
-      - ./files/tmp:/tmp
-      - ./files/media:/app/media          # ← add this line
-    ...
-```
-
----
-
-## 4. Build / pull and start the stack
+## 3. Build / pull and start the stack
 
 ```bash
-cd /srv/mahjong-portal/deploy
+cd /srv/docker-compose/mahjong-portal/deploy
 
 # Build the image locally (or pull from registry if you push to ghcr.io/…):
 docker compose build
@@ -120,7 +89,7 @@ curl -s http://localhost:6101/ | head -5
 
 ---
 
-## 5. Obtain a TLS certificate
+## 4. Obtain a TLS certificate
 
 Run certbot in standalone mode (nginx not yet serving the domain):
 
@@ -138,7 +107,7 @@ systemctl status certbot.timer
 
 ---
 
-## 6. nginx configuration
+## 5. nginx configuration
 
 Create `/etc/nginx/conf.d/mahjong-portal.conf`:
 
@@ -188,7 +157,7 @@ server {
 
     # Serve Django-collected static files directly (no gunicorn round-trip)
     location /static/ {
-        alias /srv/mahjong-portal/deploy/files/collected_static/;
+        alias /srv/docker-compose/mahjong-portal/deploy/files/collected_static/;
         expires 30d;
         add_header Cache-Control "public, immutable";
         access_log off;
@@ -196,7 +165,7 @@ server {
 
     # Serve user-uploaded media files directly
     location /media/ {
-        alias /srv/mahjong-portal/deploy/files/media/;
+        alias /srv/docker-compose/mahjong-portal/deploy/files/media/;
         expires 7d;
         add_header Cache-Control "public";
         access_log off;
@@ -225,26 +194,22 @@ nginx -t && systemctl reload nginx
 
 ---
 
-## 7. Auto-renew hook
+## 6. Auto-renew hook
 
-certbot's auto-renew does not reload nginx by default. Create a deploy hook:
+certbot's auto-renew does not reload nginx by default. Reload nginx
 
 ```bash
-cat > /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh << 'EOF'
-#!/bin/sh
 systemctl reload nginx
-EOF
-chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
 ```
 
 ---
 
-## 8. Routine updates
+## 7. Routine updates
 
 Use the Makefile in `deploy/`:
 
 ```bash
-cd /srv/mahjong-portal/deploy
+cd /srv/docker-compose/mahjong-portal/deploy
 make update
 ```
 

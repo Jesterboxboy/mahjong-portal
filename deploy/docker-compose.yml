@@ -15,6 +15,7 @@ services:
       - ./files/whoosh_index:/app/whoosh_index/
       - ./files/tmp:/tmp
       - ./files/shared/:/app/shared/
+      - ./files/media:/app/media
     restart: always
     logging:
       driver: json-file
@@ -34,6 +35,7 @@ services:
     volumes:
       - ./files/whoosh_index:/app/whoosh_index/
       - ./files/tmp:/tmp
+      - ./files/media:/app/media
     restart: always
     logging:
       driver: json-file

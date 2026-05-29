@@ -646,12 +646,17 @@ msgstr "Anmelden über Pantheon"
 
 #: templates/account/login.html:8
 msgid ""
-"Please use your login and password from https://rating.riichimahjong.org/ to "
-"login."
+"Please use your login and password from https://rating.riichimahjong.at/ to login."
 msgstr ""
-"Bitte verwenden Sie Ihre Anmeldedaten von Pantheon zum Einloggen."
+"Bitte verwenden Sie Ihre Anmeldedaten von https://rating.riichimahjong.at zum Einloggen."
 
 #: templates/account/login.html:9
+msgid ""
+"If you do not yet have an account sign up at https://manage.riichimahjong.at/profile/signup ."
+msgstr ""
+"Falls Du noch keinen Account hast kannst du einen unter https://manage.riichimahjong.at/profile/signup erstellen."
+
+#: templates/account/login.html:10
 msgid ""
 "We are not storing these credentials, they are used only during the login "
 "process."

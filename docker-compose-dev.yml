@@ -20,6 +20,9 @@ services:
       - media_uploads:/app/media
     ports:
       - '8060:8060'
+    networks:
+      - default
+      - pantheon_internal_net
     command: python manage.py runserver 0.0.0.0:8060
 
   db:
@@ -30,3 +33,7 @@ services:
       - ./.envs/.local
 #    ports:
 #      - '5462:5432'
+
+networks:
+  pantheon_internal_net:
+    external: true
