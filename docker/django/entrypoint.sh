@@ -31,6 +31,6 @@ until postgres_ready; do
   sleep 1
 done
 
-mkdir -p /app/media/uploads /app/media/uploads/gdpr /app/media/tournament/gdpr
+mkdir -p /app/media/uploads /app/media/uploads/gdpr /app/media/tournament/gdpr || true
 
 exec "$@"

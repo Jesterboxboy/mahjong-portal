@@ -41,4 +41,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 RUN mkdir -p /django_cache
 RUN chown docker-user /django_cache
 
+RUN mkdir -p /app/media/uploads/gdpr /app/media/tournament/gdpr \
+    && chown -R docker-user /app/media
+
 USER docker-user
