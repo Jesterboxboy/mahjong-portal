@@ -57,14 +57,43 @@ class TournamentAdmin(TabbedTranslationAdmin):
     filter_horizontal = ["clubs"]
 
     fieldsets = [
-        (None, {"fields": ["name", "slug", "country", "city", "clubs", "tournament_type", "tournament_games_type",
-                           "start_date", "end_date", "number_of_sessions", "number_of_players",
-                           "is_upcoming", "is_hidden", "is_event", "is_majsoul_tournament",
-                           "is_pantheon_registration", "fill_city_in_registration",
-                           "opened_registration", "registrations_pre_moderation",
-                           "is_apply_in_rating", "is_command", "is_pre_registration", "with_confirm_code",
-                           "display_notes", "share_notes", "registration_link",
-                           "old_pantheon_id", "new_pantheon_id", "ema_id", "online_config"]}),
+        (
+            None,
+            {
+                "fields": [
+                    "name",
+                    "slug",
+                    "country",
+                    "city",
+                    "clubs",
+                    "tournament_type",
+                    "tournament_games_type",
+                    "start_date",
+                    "end_date",
+                    "number_of_sessions",
+                    "number_of_players",
+                    "is_upcoming",
+                    "is_hidden",
+                    "is_event",
+                    "is_majsoul_tournament",
+                    "is_pantheon_registration",
+                    "fill_city_in_registration",
+                    "opened_registration",
+                    "registrations_pre_moderation",
+                    "is_apply_in_rating",
+                    "is_command",
+                    "is_pre_registration",
+                    "with_confirm_code",
+                    "display_notes",
+                    "share_notes",
+                    "registration_link",
+                    "old_pantheon_id",
+                    "new_pantheon_id",
+                    "ema_id",
+                    "online_config",
+                ]
+            },
+        ),
         ("Tournament Info Tab", {"fields": ["venue_address", "schedule", "lunch_options", "contact_info"]}),
         ("GDPR", {"fields": ["gdpr_document", "gdpr_file"]}),
     ]
@@ -222,9 +251,7 @@ def create_tournament_from_application(modeladmin, request, queryset):
         f'Tournament "{tournament.name}" created. Please review and complete the details.',
         level=messages.SUCCESS,
     )
-    return HttpResponseRedirect(
-        reverse("admin:tournament_tournament_change", args=[tournament.pk])
-    )
+    return HttpResponseRedirect(reverse("admin:tournament_tournament_change", args=[tournament.pk]))
 
 
 create_tournament_from_application.short_description = "Create Tournament from application"

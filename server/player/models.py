@@ -79,9 +79,7 @@ class Player(BaseModel):
 
     @staticmethod
     def ema_queryset():
-        return (
-            Player.objects.exclude(Q(ema_id__isnull=True) | Q(ema_id="")).order_by("-ema_id")
-        )
+        return Player.objects.exclude(Q(ema_id__isnull=True) | Q(ema_id="")).order_by("-ema_id")
 
 
 class PlayerTitle(BaseModel):

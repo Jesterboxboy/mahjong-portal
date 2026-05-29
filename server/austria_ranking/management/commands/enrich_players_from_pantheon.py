@@ -84,15 +84,11 @@ class Command(BaseCommand):
                 )
                 candidates = list(response.people)
             except TwirpServerException as exc:
-                self.stdout.write(
-                    self.style.ERROR(f"  ERROR  {player} (EMA {player.ema_id}): Frey API error — {exc}")
-                )
+                self.stdout.write(self.style.ERROR(f"  ERROR  {player} (EMA {player.ema_id}): Frey API error — {exc}"))
                 continue
 
             if len(candidates) == 0:
-                self.stdout.write(
-                    f"  NO MATCH  {player} (EMA {player.ema_id}) — query: '{query}'"
-                )
+                self.stdout.write(f"  NO MATCH  {player} (EMA {player.ema_id}) — query: '{query}'")
                 skipped_no_match += 1
 
             elif len(candidates) == 1:

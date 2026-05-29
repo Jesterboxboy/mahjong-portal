@@ -54,9 +54,7 @@ def rank_players_for_period(quota_period) -> list[dict]:
 
     # Build player → portal Player lookup by ema_id
     ema_ids = list(player_data.keys())
-    player_lookup: dict[str, Player] = {
-        p.ema_id: p for p in Player.objects.filter(ema_id__in=ema_ids) if p.ema_id
-    }
+    player_lookup: dict[str, Player] = {p.ema_id: p for p in Player.objects.filter(ema_id__in=ema_ids) if p.ema_id}
 
     # Build paid-years lookup:
     # - ema_id in lookup → player is in the portal; only years in the set are counted

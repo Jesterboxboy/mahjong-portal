@@ -17,8 +17,8 @@ class Command(BaseCommand):
         start_date = datetime(2019, 1, 1, tzinfo=pytz.UTC)
         end_date = datetime(2020, 1, 1, tzinfo=pytz.UTC)
 
-        results = (
-            TournamentResult.objects.filter(tournament__end_date__gte=start_date, tournament__end_date__lt=end_date)
+        results = TournamentResult.objects.filter(
+            tournament__end_date__gte=start_date, tournament__end_date__lt=end_date
         )
 
         player_ids = [x.player_id for x in results]

@@ -360,9 +360,7 @@ class TournamentRegistration(BaseModel):
     )
     city_object = models.ForeignKey(City, on_delete=models.CASCADE, null=True, blank=True)
 
-    registration_country = models.CharField(
-        max_length=255, verbose_name=_("Country"), null=True
-    )
+    registration_country = models.CharField(max_length=255, verbose_name=_("Country"), null=True)
     allow_to_save_data = models.BooleanField(default=False, verbose_name=_("I allow to store my personal data"))
 
     def __unicode__(self):
@@ -397,9 +395,7 @@ class OnlineTournamentRegistration(BaseModel):
     user = models.ForeignKey("account.User", on_delete=models.CASCADE, null=True, blank=True)
     city_object = models.ForeignKey(City, on_delete=models.CASCADE, null=True, blank=True)
 
-    registration_country = models.CharField(
-        max_length=255, verbose_name=_("Country"), null=True
-    )
+    registration_country = models.CharField(max_length=255, verbose_name=_("Country"), null=True)
     allow_to_save_data = models.BooleanField(default=False, verbose_name=_("I allow to store my personal data"))
 
     notes = models.TextField(null=True, blank=True, default="", verbose_name=_("Additional info"))

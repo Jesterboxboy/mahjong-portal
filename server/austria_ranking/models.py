@@ -20,7 +20,11 @@ class QuotaEvent(models.Model):
     end_date = models.DateField()
     calculated_at = models.DateTimeField(null=True, blank=True)
     is_current = models.BooleanField(default=False)
-    seats_available = models.PositiveIntegerField(null=True, blank=True, help_text="If set, the first N confirmed-attending players earn a guaranteed seat (shown with ✓ in the ranking).")
+    seats_available = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="If set, the first N confirmed-attending players earn a guaranteed seat (shown with ✓ in the ranking).",
+    )
 
     class Meta:
         ordering = ["-end_date"]
@@ -61,7 +65,9 @@ class EmaTournamentResult(models.Model):
 
 class AustrianRanking(models.Model):
     quota_period = models.ForeignKey(QuotaPeriod, on_delete=models.CASCADE, related_name="rankings")
-    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="austria_rankings")
+    player = models.ForeignKey(
+        Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="austria_rankings"
+    )
     ema_id = models.CharField(max_length=30)
     display_name = models.CharField(max_length=200)
     rank_position = models.PositiveIntegerField()

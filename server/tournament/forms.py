@@ -17,7 +17,16 @@ class TournamentRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = TournamentRegistration
-        fields = ["last_name", "first_name", "registration_country", "city", "email", "phone", "notes", "allow_to_save_data"]
+        fields = [
+            "last_name",
+            "first_name",
+            "registration_country",
+            "city",
+            "email",
+            "phone",
+            "notes",
+            "allow_to_save_data",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -39,7 +48,16 @@ class OnlineTournamentRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = OnlineTournamentRegistration
-        fields = ["last_name", "first_name", "registration_country", "city", "tenhou_nickname", "contact", "notes", "allow_to_save_data"]
+        fields = [
+            "last_name",
+            "first_name",
+            "registration_country",
+            "city",
+            "tenhou_nickname",
+            "contact",
+            "notes",
+            "allow_to_save_data",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

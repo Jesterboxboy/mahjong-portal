@@ -98,8 +98,7 @@ def account_settings(request):
     attendance_data = []
     if request.user.is_authenticated and not is_anonymous:
         existing_intents = {
-            i.quota_period_id: i.status
-            for i in EventAttendanceIntent.objects.filter(user=request.user)
+            i.quota_period_id: i.status for i in EventAttendanceIntent.objects.filter(user=request.user)
         }
         for period in QuotaEvent.objects.all():
             attendance_data.append((period, existing_intents.get(period.pk, EventAttendanceIntent.UNKNOWN)))
@@ -154,7 +153,11 @@ def request_player_and_user_connection(request, slug):
 def set_attendance_intent(request, period_pk: int):
     period = get_object_or_404(QuotaEvent, pk=period_pk)
     status = request.POST.get("status", EventAttendanceIntent.UNKNOWN)
-    if status not in (EventAttendanceIntent.ATTENDING, EventAttendanceIntent.NOT_ATTENDING, EventAttendanceIntent.UNKNOWN):
+    if status not in (
+        EventAttendanceIntent.ATTENDING,
+        EventAttendanceIntent.NOT_ATTENDING,
+        EventAttendanceIntent.UNKNOWN,
+    ):
         status = EventAttendanceIntent.UNKNOWN
     EventAttendanceIntent.objects.update_or_create(
         user=request.user,

@@ -79,9 +79,7 @@ class Command(BaseCommand):
 
             slug = _unique_slug(last_name, first_name)
             if dry_run:
-                self.stdout.write(
-                    f"  WOULD CREATE  {last_name} {first_name} (EMA {ema_id}, slug={slug})"
-                )
+                self.stdout.write(f"  WOULD CREATE  {last_name} {first_name} (EMA {ema_id}, slug={slug})")
             else:
                 Player.objects.create(
                     first_name=first_name,
@@ -90,14 +88,8 @@ class Command(BaseCommand):
                     ema_id=ema_id,
                     country=austria,
                 )
-                self.stdout.write(
-                    self.style.SUCCESS(f"  CREATED  {last_name} {first_name} (EMA {ema_id})")
-                )
+                self.stdout.write(self.style.SUCCESS(f"  CREATED  {last_name} {first_name} (EMA {ema_id})"))
             created += 1
 
         action = "Would create" if dry_run else "Created"
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"\nDone. {action} {created} player(s), skipped {skipped} existing."
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"\nDone. {action} {created} player(s), skipped {skipped} existing."))

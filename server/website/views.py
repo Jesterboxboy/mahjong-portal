@@ -108,9 +108,7 @@ def _annotate_unpaid_results(rankings, period):
 
     # Get ema_id -> portal Player lookup
     ema_ids = [r.ema_id for r in rankings]
-    player_by_ema = {
-        p.ema_id: p for p in Player.objects.filter(ema_id__in=ema_ids) if p.ema_id
-    }
+    player_by_ema = {p.ema_id: p for p in Player.objects.filter(ema_id__in=ema_ids) if p.ema_id}
 
     # Get paid years per player pk
     player_pks = [p.pk for p in player_by_ema.values()]

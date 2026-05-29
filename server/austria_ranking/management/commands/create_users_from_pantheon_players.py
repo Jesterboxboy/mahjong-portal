@@ -151,9 +151,7 @@ class Command(BaseCommand):
 
             if person is None:
                 self.stdout.write(
-                    self.style.WARNING(
-                        f"  NO FREY DATA  {player} (pantheon_id={player.pantheon_id}) — skipping"
-                    )
+                    self.style.WARNING(f"  NO FREY DATA  {player} (pantheon_id={player.pantheon_id}) — skipping")
                 )
                 skipped += 1
                 continue
@@ -200,6 +198,4 @@ class Command(BaseCommand):
                 skipped += 1
 
         action = "Would create" if dry_run else "Created"
-        self.stdout.write(
-            self.style.SUCCESS(f"\nDone. {action} {created} user(s), skipped {skipped}.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"\nDone. {action} {created} user(s), skipped {skipped}."))

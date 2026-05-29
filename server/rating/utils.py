@@ -18,7 +18,6 @@ def get_latest_rating_date(rating, is_external=False):
     return today, last.date if last is not None else None
 
 
-
 def parse_rating_date(year, month, day):
     is_last = True
     rating_date = None
