@@ -423,3 +423,38 @@ If they earn a checkmark deduct them from x as well as in improvement 18.
 **`templates/website/rangliste.html`**
 - Name cell: `{% elif ranking.has_crown %}<span class="text-warning ...">👑</span>{% endif %}` added after the ✓ check
 
+
+# Improvement 20 ✓ DONE
+Implment a function to directly import tournament results from the linked pantheon tournamen(linked New pantheon id:) under admin/tournament/tournament/ with an action named "Load pantheon results". if a pantheon player  is not linked to a player account in mahjong portal use load_player and just
+fill the player string with the name.
+
+### Implementation
+
+**`server/tournament/admin.py`**
+- Added `load_pantheon_results(modeladmin, request, queryset)` admin action function
+- Checks that exactly one tournament is selected
+- Validates tournament has `new_pantheon_id` set
+- Calls `get_rating_table(tournament.new_pantheon_id)` to fetch results from Pantheon
+- Iterates through Pantheon rating table:
+  - Attempts to match player by `Player.objects.get(pantheon_id=pantheon_id)`
+  - For unlinked players: creates TournamentResult with `player=None` and `player_string=title`
+  - For linked players: creates TournamentResult with `player` FK and empty `player_string`
+- Uses `TournamentResult.objects.update_or_create()` to handle both new and existing results
+- Provides detailed success message with counts: created, updated, and unlinked players
+- Added to `TournamentAdmin.actions = [load_pantheon_results]`
+
+**Key Features:**
+- Atomic transaction ensures all-or-nothing import
+- Graceful handling of unlinked players (load_player=false pattern)
+- Admin messages for all error conditions (no pantheon_id, API failure, empty results)
+- Statistics tracking for transparency (created vs updated, unlinked player count)
+- Uses existing `utils.new_pantheon.get_rating_table()` infrastructure
+- Passes `only_min_games=False` to include ALL players, not just those who played minimum games
+
+**Data Flow:**
+1. Admin selects tournament(s) in admin list view
+2. Chooses "Load Pantheon results" from Actions dropdown
+3. Function validates single selection and pantheon_id presence
+4. Fetches rating table from Pantheon API via `get_rating_table()`
+5. Creates/updates TournamentResult for each player in rating table
+6. Shows success message with import statistics

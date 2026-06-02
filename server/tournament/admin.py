@@ -11,6 +11,9 @@ from django.utils.text import slugify
 from modeltranslation.admin import TabbedTranslationAdmin
 from tinymce.widgets import TinyMCE
 
+from django.db import transaction
+
+from player.models import Player
 from settings.models import Country
 from tournament.models import (
     MsOnlineTournamentRegistration,
@@ -21,6 +24,97 @@ from tournament.models import (
     TournamentRegistration,
     TournamentResult,
 )
+from utils.new_pantheon import get_rating_table
+
+
+def load_pantheon_results(modeladmin, request, queryset):
+    """
+    Load tournament results from a linked Pantheon event.
+    Creates TournamentResult entries for all players in the Pantheon rating table.
+    Players without a linked portal account are saved with load_player=false (player_string only).
+    """
+    if queryset.count() != 1:
+        modeladmin.message_user(
+            request,
+            "Please select exactly one tournament to load Pantheon results for.",
+            level=messages.WARNING,
+        )
+        return
+
+    tournament = queryset.first()
+
+    if not tournament.new_pantheon_id:
+        modeladmin.message_user(
+            request,
+            f"Tournament '{tournament.name}' has no New Pantheon ID set. Cannot load results.",
+            level=messages.ERROR,
+        )
+        return
+
+    try:
+        response = get_rating_table(tournament.new_pantheon_id)
+        players_in_rating = response.list
+    except Exception as e:
+        modeladmin.message_user(
+            request,
+            f"Failed to fetch results from Pantheon: {e}",
+            level=messages.ERROR,
+        )
+        return
+
+    if not players_in_rating:
+        modeladmin.message_user(
+            request,
+            "Pantheon returned an empty rating table for this event.",
+            level=messages.WARNING,
+        )
+        return
+
+    # Track stats
+    created_count = 0
+    updated_count = 0
+    unlinked_count = 0
+
+    with transaction.atomic():
+        for place, entry in enumerate(players_in_rating, start=1):
+            pantheon_id = entry.id
+            title = entry.title
+            scores = round(entry.rating, 2)
+            games = entry.games_played
+
+            # Try to find a linked portal player
+            player = None
+            try:
+                player = Player.objects.get(pantheon_id=pantheon_id)
+            except Player.DoesNotExist:
+                unlinked_count += 1
+
+            # Check if result already exists
+            result, created = TournamentResult.objects.update_or_create(
+                tournament=tournament,
+                place=place,
+                defaults={
+                    "player": player,
+                    "player_string": title if player is None else "",
+                    "scores": scores,
+                    "games": games,
+                },
+            )
+
+            if created:
+                created_count += 1
+            else:
+                updated_count += 1
+
+    modeladmin.message_user(
+        request,
+        f"Loaded {len(players_in_rating)} results from Pantheon event {tournament.new_pantheon_id}. "
+        f"Created: {created_count}, Updated: {updated_count}, Unlinked players: {unlinked_count}.",
+        level=messages.SUCCESS,
+    )
+
+
+load_pantheon_results.short_description = "Load Pantheon results"
 
 
 class TournamentForm(forms.ModelForm):
@@ -54,6 +148,7 @@ class TournamentAdmin(TabbedTranslationAdmin):
     ordering = ["-end_date"]
 
     filter_horizontal = ["clubs"]
+    actions = [load_pantheon_results]
 
     fieldsets = [
         (

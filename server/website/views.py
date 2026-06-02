@@ -581,21 +581,43 @@ def export_tournament_results(request, tournament_id):
 
     tournament = Tournament.objects.get(id=tournament_id)
 
-    for result in tournament.results.all().order_by("place"):
-        player = Player.objects.get(id=result.player_id)
+    for result in tournament.results.select_related("player", "country").all().order_by("place"):
+        player = result.player
+
+        first_name = ""
+        last_name = ""
+        ema_id = ""
+        country_code = ""
+        is_ema_member = ""
+
+        if player:
+            first_name = player.first_name
+            last_name = player.last_name.upper()
+            ema_id = player.ema_id or ""
+            is_ema_member = "YES" if player.ema_id else ""
+            country_code = player.country and player.country.code or ""
+        else:
+            name = (result.player_string or "").strip()
+            if name:
+                # player_string is stored as "LastName FirstName"
+                parts = name.split(" ", 1)
+                last_name = parts[0].upper()
+                if len(parts) > 1:
+                    first_name = parts[1]
+            country_code = result.country and result.country.code or ""
 
         rows.append(
             [
                 "{} {}".format(tournament.name, tournament.end_date.year),
                 tournament.get_players_count(),
                 result.place,
-                player.first_name,
-                player.last_name.upper(),
-                player.ema_id or "",
+                first_name,
+                last_name,
+                ema_id,
                 "1",
                 result.scores,
-                player.ema_id and "YES" or "",
-                player.country and player.country.name == "Russia" and "RUS" or "",
+                is_ema_member,
+                country_code,
                 tournament.end_date.strftime("%d.%m.%Y"),
                 "RUS",
                 tournament.city.name if tournament.city else "",
