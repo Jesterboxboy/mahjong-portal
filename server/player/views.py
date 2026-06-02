@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Case, Count, F, FloatField, When
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -26,6 +27,7 @@ def player_by_id_tenhou_details(request, player_id):
     return redirect(player_tenhou_details, player.slug)
 
 
+@login_required
 def player_details(request, slug, year=None, month=None, day=None):
     player = get_object_or_404(Player, slug=slug)
 
@@ -81,6 +83,15 @@ def player_details(request, slug, year=None, month=None, day=None):
     )
     membership_fees = [{"year": y, "paid": y in paid_year_set} for y in fee_years]
 
+    # Membership fees visible only to: the player themselves, EMA players manager, or superuser
+    show_membership_fees = False
+    if request.user.is_authenticated:
+        show_membership_fees = (
+            (request.user.attached_player_id is not None and request.user.attached_player_id == player.id)
+            or request.user.is_ema_players_manager
+            or request.user.is_superuser
+        )
+
     return render(
         request,
         "player/details.html",
@@ -96,6 +107,7 @@ def player_details(request, slug, year=None, month=None, day=None):
             "club_ratings": club_ratings,
             "tournaments_data": tournaments_data,
             "membership_fees": membership_fees,
+            "show_membership_fees": show_membership_fees,
         },
     )
 

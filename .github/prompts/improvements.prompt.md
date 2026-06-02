@@ -449,7 +449,6 @@ fill the player string with the name.
 - Admin messages for all error conditions (no pantheon_id, API failure, empty results)
 - Statistics tracking for transparency (created vs updated, unlinked player count)
 - Uses existing `utils.new_pantheon.get_rating_table()` infrastructure
-- Passes `only_min_games=False` to include ALL players, not just those who played minimum games
 
 **Data Flow:**
 1. Admin selects tournament(s) in admin list view
@@ -458,3 +457,64 @@ fill the player string with the name.
 4. Fetches rating table from Pantheon API via `get_rating_table()`
 5. Creates/updates TournamentResult for each player in rating table
 6. Shows success message with import statistics
+
+
+# Improvement 20 ✓ DONE
+
+* Make Player profile page i.e. /en/players/gurtl-dusleag-michael/ inaccessible if not logged in.
+* show the section Mitgliedschaftsbeitrag only if user views his own page or if user is ema players manager or superuser.
+
+### Implementation
+
+**`player/views.py`**
+- Added `from django.contrib.auth.decorators import login_required`
+- Decorated `player_details()` with `@login_required` — unauthenticated users are redirected to login page
+- Added `show_membership_fees` flag logic with authentication check:
+  - Only evaluates permissions if `request.user.is_authenticated`
+  - Shows fees when `request.user.attached_player_id` is not None AND equals `player.id` (user viewing own profile)
+  - OR when `request.user.is_ema_players_manager` (EMA players manager role)
+  - OR when `request.user.is_superuser` (admin role)
+  - All other cases: `show_membership_fees = False`
+- Passed `show_membership_fees` in render context
+
+**`templates/player/details.html`**
+- Changed membership fees section condition from `{% if membership_fees %}` to `{% if membership_fees and show_membership_fees %}`
+- Section now hidden unless user is: the player themselves, EMA players manager, or superuser
+
+**Access Control:**
+- Player profiles require authentication (Django redirects to login with `?next=` parameter)
+- Membership fee status visible only to authorized users (player themselves, EMA players manager, or superuser)
+- Other profile sections (ratings, tournaments, club ratings) visible to all authenticated users
+
+
+# Improvement 21 ✓ DONE
+I want to behave tournament ranking views like en/tournaments/riichi/rmp-riichi-open/
+Similar to projects/mahjong-portal/server/templates/website/rangliste.html as to following points
+* dont show full names but abbreviate Surname to First Letter and ., i.e. Franz Huber -> Franz H.
+* don't link to player profiles
+
+### Implementation
+
+**`mahjong_portal/templatetags/player_helper.py`**
+- Added custom `split` template filter: splits a string by delimiter (default space) and returns a list
+- Required because Django doesn't have a built-in split filter
+- Used to parse player_string format "LastName FirstName" into parts for abbreviation
+
+**`templates/tournament/_tournament_results.html`**
+- Added `{% load player_helper %}` to access the custom split filter
+- Implemented conditional display based on authentication:
+  - **Authenticated users**: Full name with link using `{% include 'common/_player_name.html' %}`
+  - **Anonymous users**: Abbreviated name without link: `{{ player.first_name }} {{ player.last_name|slice:":1" }}.`
+- For `player_string` (non-linked players, anonymous users): splits on space using custom `split` filter, shows `FirstName L.` format
+- Substitution/replacement players still show full name (as before)
+
+**Name Abbreviation Logic (anonymous users only):**
+- Linked players: `{{ player.first_name }} {{ player.last_name|slice:":1" }}.`
+- Player strings: `{{ parts.0 }} {{ parts|last|slice:":1" }}.` after splitting on space
+- Handles single-word names gracefully (shows full name if no space to split on)
+
+**Privacy & Consistency:**
+- Tournament results now show abbreviated names for anonymous users, matching rangliste behavior
+- Authenticated users see full names with clickable links to player profiles
+- Consistent with Improvement 17's privacy approach for unauthenticated rangliste viewers
+- Replacement players exempt from abbreviation (show full name as substitution notice)

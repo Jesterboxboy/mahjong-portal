@@ -1,4 +1,4 @@
-{% load i18n humanize %}
+{% load i18n humanize player_helper %}
 
 <div class="table-responsive-sm">
     <table class="table table-hover">
@@ -31,13 +31,42 @@
                                     <nobr>{% trans 'Substitution' %}</nobr>
                                 </span>
                     {% else %}
-                        {% with result.player as player %}
-                            {% if player %}
-                                {% include 'common/_player_name.html' %}
-                            {% else %}
-                                {{ result.player_string }}
-                            {% endif %}
-                        {% endwith %}
+                        {% if user.is_authenticated %}
+                            {# Authenticated users: full name with link #}
+                            {% with result.player as player %}
+                                {% if player and player.slug %}
+                                    {% include 'common/_player_name.html' %}
+                                {% elif player %}
+                                    {# Player exists but no slug - show full name without link #}
+                                    <span class="d-none d-md-block">
+                                        {{ player.full_name }}
+                                    </span>
+                                    <span class="d-block d-md-none">
+                                        <nobr>{{ player.last_name }} {{ player.first_name.0 }}.</nobr>
+                                    </span>
+                                {% else %}
+                                    {# No linked player - show player_string #}
+                                    {{ result.player_string }}
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            {# Anonymous users: abbreviated name without link #}
+                            {% with result.player as player %}
+                                {% if player %}
+                                    {# Abbreviated name: First Last -> First L. #}
+                                    {{ player.first_name }} {{ player.last_name|slice:":1" }}.
+                                {% else %}
+                                    {# No linked player - show player_string abbreviated #}
+                                    {% with result.player_string|split:" " as parts %}
+                                        {% if parts|length > 1 %}
+                                            {{ parts.0 }} {{ parts|last|slice:":1" }}.
+                                        {% else %}
+                                            {{ result.player_string }}
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
                     {% endif %}
                 </td>
                 <td>
