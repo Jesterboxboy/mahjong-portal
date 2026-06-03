@@ -826,7 +826,7 @@ msgstr "Kontakt"
 #: templates/tournament/application.html:106
 #: templates/tournament/application.html:107
 msgid "Tournament application"
-msgstr "Turnieranmeldung"
+msgstr "Turnierbewerbung"
 
 #: templates/base.html:117 templates/website/championships.html:10
 msgid "Championships"
@@ -1791,18 +1791,15 @@ msgstr "Notizen"
 
 #: templates/tournament/application.html:12
 msgid ""
-"Please tell us about your tournament. We will contact with you in 3 days "
-"after application."
+"Please submit all information about your tournament."
 msgstr ""
-"Bitte erzählen Sie uns von Ihrem Turnier. Wir werden uns innerhalb von 3 "
-"Tagen nach Ihrer Bewerbung mit Ihnen in Verbindung setzen."
+"Bitte übermitteln Sie alle Informationen zu Ihrem Turnier."
 
 #: templates/tournament/application.html:16
 msgid ""
 "Your application was saved! We will contact with you for further details."
 msgstr ""
-"Ihre Bewerbung wurde gespeichert! Wir werden uns für weitere Details mit "
-"Ihnen in Verbindung setzen."
+"Ihre Bewerbung wurde gespeichert! Wir werden Sie kontaktieren."
 
 #: templates/tournament/application.html:24
 msgid "Main info"
@@ -2452,7 +2449,7 @@ msgid "Rankings"
 msgstr "Rangliste"
 
 msgid "About us"
-msgstr "Über uns"
+msgstr "Der Verband"
 
 msgid "Toggle theme"
 msgstr "Theme umschalten"

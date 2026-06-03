@@ -43,7 +43,7 @@ On your host machine you can set up these cron commands to make backups:
 
 
 ### Changing translation
-change translation in django.po then run
+change translation in server/locale/django.po then run
 ```
 docker compose exec -u root web python manage.py compilemessages
 ```
