@@ -140,6 +140,15 @@ class Tournament(BaseModel):
         blank=True,
     )
     online_config = models.ForeignKey(OnlineTournamentConfig, on_delete=models.PROTECT, null=True, blank=True)
+    non_playing_organizer = models.ForeignKey(
+        Player,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="organized_tournaments",
+        verbose_name=_("Non-playing organizer"),
+        help_text=_("A player who organizes this tournament but does not compete. They receive the average of their AT points for this quota period."),
+    )
 
     def __unicode__(self):
         return self.name

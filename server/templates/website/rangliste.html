@@ -107,8 +107,8 @@
                                     {% for r in ranking.quota_period.ema_results.all %}
                                         {% if r.ema_id == ranking.ema_id and r.is_austrian_tournament and r.points > 0 %}
                                         {% if r.pk in ranking.unpaid_result_pks %}{% blocktrans with year=r.end_date.year asvar fee_title %}Fee for {{ year }} not payed{% endblocktrans %}{% endif %}
-                                        <tr{% if r.pk in ranking.unpaid_result_pks %} class="table-danger" title="{{ fee_title }}"{% else %} class="table-success"{% endif %}>
-                                            <td>{% if r.ema_tournament_url %}<a href="{{ r.ema_tournament_url }}" target="_blank" rel="noopener">{{ r.tournament_name }}</a>{% else %}{{ r.tournament_name }}{% endif %}</td>
+                                        <tr{% if r.position == 999 %} class="table-info"{% elif r.pk in ranking.unpaid_result_pks %} class="table-danger" title="{{ fee_title }}"{% else %} class="table-success"{% endif %}>
+                                            <td>{% if r.position == 999 %}{{ r.tournament_name }} <span class="badge bg-secondary">{% trans "Organizer" %}</span>{% elif r.ema_tournament_url %}<a href="{{ r.ema_tournament_url }}" target="_blank" rel="noopener">{{ r.tournament_name }}</a>{% else %}{{ r.tournament_name }}{% endif %}</td>
                                             <td class="text-end">{{ r.points }}</td>
                                         </tr>
                                         {% endif %}

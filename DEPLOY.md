@@ -57,11 +57,21 @@ PANTHEON_FRONTEND_URL=https://sigrun.yourdomain.example.com
 
 The production compose mounts these bind paths under `deploy/files/`.
 Create them and ensure the container user (`UID 82` for Alpine's default, or match your image) can write:
+find dockergroup and edit in Dockerfile
+
+RUN addgroup -g 989 -S docker && adduser -u 100 -S docker-user -G docker
 
 ```bash
 cd /srv/docker-compose/mahjong-portal/deploy
 mkdir -p files/collected_static files/whoosh_index files/tmp files/shared files/media
+sudo chgrp -R docker ./files/
+sudo chmod -R g+rwX ./files/
 ```
+
+docker compose build --no-cache web
+docker compose run --rm web id
+# uid=100(docker-user) gid=989(docker) groups=989(docker)
+docker compose run --rm web python manage.py collectstatic --no-input --clear
 
 ---
 

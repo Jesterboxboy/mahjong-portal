@@ -518,3 +518,36 @@ Similar to projects/mahjong-portal/server/templates/website/rangliste.html as to
 - Authenticated users see full names with clickable links to player profiles
 - Consistent with Improvement 17's privacy approach for unauthenticated rangliste viewers
 - Replacement players exempt from abbreviation (show full name as substitution notice)
+
+
+# Improvement 22
+A player wo runs an austrian tournament but does not play in it, gets the average of his Austrian tournament results for that quota event counted towards his score.
+Implement it in this way.
+* Add a field to the tournament model, called "non playing organizer" that lets me select a "player".
+* While running the ranking calculation for a Quota event, check if a player is set as an organizer in a tournament(only if he is non playing). If so, calculate the avg base points of
+  all tournaments he played for that quota between start and end date, and that result as EMA Tournament Result with position 999.
+* Add that result normally to his austrian ranking and display on the page.
+
+### Implementation
+
+**Files changed:**
+- `server/tournament/models.py` — added `non_playing_organizer = ForeignKey(Player, null=True, blank=True, on_delete=SET_NULL, related_name="organized_tournaments")` to the `Tournament` model.
+- `server/tournament/admin.py` — added `"non_playing_organizer"` to `TournamentAdmin.fieldsets` so the field is visible and editable in Django admin.
+- `server/tournament/migrations/0068_add_non_playing_organizer.py` — migration for the new field.
+- `server/austria_ranking/calculator.py`:
+  - Added constant `ORGANIZER_BONUS_TOURNAMENT_NAME = "Veranstalter-Ø"`.
+  - Added helper function `_inject_organizer_bonuses(quota_period, player_data, player_lookup)` that:
+    1. Queries all `Tournament` objects whose `end_date` falls in the quota period and that have `non_playing_organizer` set.
+    2. For each organizer player (identified by `Player.ema_id`), skips if they have no AT results in `player_data` (no average can be computed).
+    3. Calculates `avg_points = round(sum(at_points) / count)`.
+    4. Appends a synthetic entry to `player_data[ema_id]["at_results"]` so the calculator includes it in the AT score.
+    5. Creates (or updates) a persistent `EmaTournamentResult` row with `position=999`, `tournament_name="Veranstalter-Ø"`, `is_austrian_tournament=True`, using the quota period's `end_date` as the result date. This is what the rangliste detail view reads.
+  - In `rank_players_for_period()`: before scoring, deletes any stale `"Veranstalter-Ø"` rows for the period, then calls `_inject_organizer_bonuses`.
+- `server/templates/website/rangliste.html` — in the AT-tournaments detail table, rows with `r.position == 999` are styled `table-info` and their tournament name cell shows the name in italics with a `Veranstalter` badge instead of an EMA link.
+
+**Behaviour:**
+- Admins set a `non_playing_organizer` on a `Tournament` via the Django admin.
+- Each time the ranking is recalculated (`rank_players_for_period`), the organizer bonus is recomputed from scratch (stale rows are deleted first).
+- An organizer only receives the bonus if they have at least one real AT result in the period; otherwise they would not normally appear in the ranking at all.
+- If a player organizes multiple tournaments in the same period, the bonus is computed once (average of all their AT results) — the first organized tournament chronologically triggers the bonus.
+- The bonus row is displayed in the "Österreich-Turniere" detail section with a teal (`table-info`) background and a grey `Veranstalter` badge.

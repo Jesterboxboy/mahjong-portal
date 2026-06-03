@@ -177,6 +177,7 @@ class TournamentAdmin(TranslationAdmin):
                     "new_pantheon_id",
                     "ema_id",
                     "online_config",
+                    "non_playing_organizer",
                 ]
             },
         ),

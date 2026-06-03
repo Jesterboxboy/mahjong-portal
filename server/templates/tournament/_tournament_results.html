@@ -38,12 +38,7 @@
                                     {% include 'common/_player_name.html' %}
                                 {% elif player %}
                                     {# Player exists but no slug - show full name without link #}
-                                    <span class="d-none d-md-block">
-                                        {{ player.full_name }}
-                                    </span>
-                                    <span class="d-block d-md-none">
-                                        <nobr>{{ player.last_name }} {{ player.first_name.0 }}.</nobr>
-                                    </span>
+                                    {{ player.full_name }}
                                 {% else %}
                                     {# No linked player - show player_string #}
                                     {{ result.player_string }}
@@ -54,12 +49,23 @@
                             {% with result.player as player %}
                                 {% if player %}
                                     {# Abbreviated name: First Last -> First L. #}
-                                    {{ player.first_name }} {{ player.last_name|slice:":1" }}.
+                                    <span class="d-none d-md-block">
+                                        {{ player.first_name }} {{ player.last_name|slice:":1" }}.
+                                    </span>
+                                    <span class="d-block d-md-none">
+                                        <nobr>{{ player.last_name }} {{ player.first_name.0 }}.</nobr>
+                                    </span>
                                 {% else %}
                                     {# No linked player - show player_string abbreviated #}
+                                    {# player_string format: "LastName FirstName" #}
                                     {% with result.player_string|split:" " as parts %}
                                         {% if parts|length > 1 %}
-                                            {{ parts.0 }} {{ parts|last|slice:":1" }}.
+                                            <span class="d-none d-md-block">
+                                                {{ parts|last }} {{ parts.0|slice:":1" }}.
+                                            </span>
+                                            <span class="d-block d-md-none">
+                                                <nobr>{{ parts.0 }} {{ parts|last|slice:":1" }}.</nobr>
+                                            </span>
                                         {% else %}
                                             {{ result.player_string }}
                                         {% endif %}

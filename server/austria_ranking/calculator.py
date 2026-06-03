@@ -17,6 +17,8 @@ from austria_ranking.models import AustrianRanking, EmaTournamentResult
 from player.models import Player
 from vereinsmitglieder.models import Mitgliedschaftsbeitrag
 
+ORGANIZER_BONUS_TOURNAMENT_NAME = "Veranstalter-Ø"
+
 
 def calculate_points(player_count: int, position: int) -> int:
     """Return the ranking points for a given tournament result."""
@@ -25,12 +27,101 @@ def calculate_points(player_count: int, position: int) -> int:
     return round(((player_count - position) / (player_count - 1)) * 1000)
 
 
+def _inject_organizer_bonuses(
+    quota_period,
+    player_data: dict,
+    player_lookup: dict,
+) -> None:
+    """
+    For each tournament in the quota period that has a non_playing_organizer,
+    compute the average of that player's existing AT base points and inject a
+    synthetic result (position 999) both into player_data (for scoring) and as
+    a persisted EmaTournamentResult row (for the detail view).
+
+    Only organizers who already have at least one AT result in the period
+    receive the bonus (otherwise the average is undefined).
+    """
+    from tournament.models import Tournament as PortalTournament
+
+    organizer_tournaments = (
+        PortalTournament.objects.filter(
+            non_playing_organizer__isnull=False,
+            end_date__gte=quota_period.start_date,
+            end_date__lte=quota_period.end_date,
+        )
+        .select_related("non_playing_organizer")
+        .order_by("end_date")
+    )
+
+    # Track which organizer EMA IDs we've already processed (one bonus per player per period)
+    processed: set[str] = set()
+
+    for tournament in organizer_tournaments:
+        organizer = tournament.non_playing_organizer
+        if organizer is None or not organizer.ema_id:
+            continue
+        ema_id = organizer.ema_id
+        if ema_id in processed:
+            continue
+        processed.add(ema_id)
+
+        # Only give the bonus if the player has actual AT results in this period
+        at_results = player_data.get(ema_id, {}).get("at_results", [])
+        if not at_results:
+            continue
+
+        avg_points = round(sum(r["points"] for r in at_results) / len(at_results))
+        if avg_points <= 0:
+            continue
+
+        bonus_name = tournament.name
+
+        # Inject into in-memory player_data.
+        # year=None bypasses the membership-fee year check since the bonus is
+        # already derived from fee-validated actual results.
+        player_data[ema_id]["at_results"].append(
+            {
+                "name": bonus_name,
+                "points": avg_points,
+                "year": None,
+                "is_organizer_bonus": True,
+            }
+        )
+
+        # Persist a synthetic EmaTournamentResult so the detail view can show it
+        display_name: str = player_data[ema_id]["display_name"]
+        parts = display_name.split(maxsplit=1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+        EmaTournamentResult.objects.update_or_create(
+            quota_period=quota_period,
+            ema_id=ema_id,
+            tournament_name=bonus_name,
+            end_date=quota_period.end_date,
+            defaults={
+                "first_name": first_name,
+                "last_name": last_name,
+                "tournament_country_code": "AT",
+                "position": 999,
+                "player_count": 1,
+                "points": avg_points,
+                "is_austrian_tournament": True,
+            },
+        )
+
+
 def rank_players_for_period(quota_period) -> list[dict]:
     """
     Calculate and persist AustrianRanking rows for the given QuotaEvent.
 
     Returns the sorted ranking list as a list of dicts (for immediate use in views/admin).
     """
+    # Remove stale organizer-bonus synthetic rows so they don't double-count
+    EmaTournamentResult.objects.filter(
+        quota_period=quota_period,
+        position=999,
+    ).delete()
+
     results = EmaTournamentResult.objects.filter(quota_period=quota_period, points__gt=0)
 
     # Group by ema_id
@@ -64,6 +155,13 @@ def rank_players_for_period(quota_period) -> list[dict]:
     for fee in Mitgliedschaftsbeitrag.objects.filter(player_id__in=player_pk_to_ema.keys()):
         ema_id = player_pk_to_ema[fee.player_id]
         paid_years_lookup[ema_id].add(fee.year)
+
+    # ── Organizer bonus ─────────────────────────────────────────────────────
+    # A player set as non_playing_organizer on an Austrian tournament within the
+    # quota period receives the average of their existing AT base points for the
+    # period added as a synthetic result (position 999).
+    _inject_organizer_bonuses(quota_period, player_data, player_lookup)
+    # ────────────────────────────────────────────────────────────────────────
 
     # Score each player
     rankings = []
