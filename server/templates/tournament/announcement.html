@@ -242,7 +242,7 @@
                                 <strong>{% trans 'Venue & Address' %}</strong>
                             </div>
                             <div class="card-body">
-                                <p class="mb-0">{{ tournament.venue_address|linebreaksbr }}</p>
+                                {{ tournament.venue_address|safe }}
                             </div>
                         </div>
                     </div>
@@ -256,7 +256,7 @@
                                 <strong>{% trans 'Schedule / Itinerary' %}</strong>
                             </div>
                             <div class="card-body">
-                                <p class="mb-0">{{ tournament.schedule|linebreaksbr }}</p>
+                                {{ tournament.schedule|safe }}
                             </div>
                         </div>
                     </div>
@@ -270,7 +270,7 @@
                                 <strong>{% trans 'Lunch Options' %}</strong>
                             </div>
                             <div class="card-body">
-                                <p class="mb-0">{{ tournament.lunch_options|linebreaksbr }}</p>
+                                {{ tournament.lunch_options|safe }}
                             </div>
                         </div>
                     </div>
@@ -284,7 +284,7 @@
                                 <strong>{% trans 'Contact' %}</strong>
                             </div>
                             <div class="card-body">
-                                <p class="mb-0">{{ tournament.contact_info|linebreaksbr|urlize }}</p>
+                                {{ tournament.contact_info|safe }}
                             </div>
                         </div>
                     </div>

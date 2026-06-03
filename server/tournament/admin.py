@@ -8,7 +8,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-from modeltranslation.admin import TabbedTranslationAdmin
+from modeltranslation.admin import TranslationAdmin
 from tinymce.widgets import TinyMCE
 
 from django.db import transaction
@@ -123,21 +123,13 @@ class TournamentForm(forms.ModelForm):
         exclude = ["registration_description", "results_description"]
         widgets = {
             "venue_address": TinyMCE(),
-            "venue_address_de": TinyMCE(),
-            "venue_address_en": TinyMCE(),
             "schedule": TinyMCE(),
-            "schedule_de": TinyMCE(),
-            "schedule_en": TinyMCE(),
             "lunch_options": TinyMCE(),
-            "lunch_options_de": TinyMCE(),
-            "lunch_options_en": TinyMCE(),
             "contact_info": TinyMCE(),
-            "contact_info_de": TinyMCE(),
-            "contact_info_en": TinyMCE(),
         }
 
 
-class TournamentAdmin(TabbedTranslationAdmin):
+class TournamentAdmin(TranslationAdmin):
     form = TournamentForm
 
     prepopulated_fields = {"slug": ["name"]}
@@ -211,6 +203,7 @@ class TournamentRegistrationAdmin(admin.ModelAdmin):
         "registration_country",
         "email",
         "phone",
+        "ema_id",
         "player",
         "city_object",
         "allow_to_save_data",

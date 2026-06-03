@@ -354,6 +354,14 @@ class TournamentRegistration(BaseModel):
 
     is_highlighted = models.BooleanField(default=False)
     notes = models.TextField(null=True, blank=True, default="", verbose_name=_("Additional info"))
+    ema_id = models.CharField(
+        max_length=50,
+        verbose_name=_("EMA-ID"),
+        help_text=_("European Mahjong Association ID (optional)"),
+        null=True,
+        blank=True,
+        default="",
+    )
 
     player = models.ForeignKey(
         Player, on_delete=models.CASCADE, null=True, blank=True, related_name="tournament_registrations"

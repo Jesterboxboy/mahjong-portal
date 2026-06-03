@@ -24,6 +24,7 @@ class TournamentRegistrationForm(forms.ModelForm):
             "city",
             "email",
             "phone",
+            "ema_id",
             "notes",
             "allow_to_save_data",
         ]
