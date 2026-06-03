@@ -235,3 +235,9 @@ This pulls the latest image, runs `collectstatic` + `migrate`, and restarts the 
 | postgres | 5432         | **not exposed** | internal Docker network only   |
 
 > Do **not** bind postgres to a host port in production.
+
+
+
+## migrations
+
+docker compose run --rm --user root web sh -c "python manage.py makemigrations && python manage.py migrate"
