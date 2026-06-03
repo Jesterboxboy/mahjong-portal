@@ -181,12 +181,23 @@
                                         <tr {% if registration_item.is_highlighted %}class="table-success" {% endif %}>
                                             <th scope="row">{{ forloop.counter }}</th>
                                             <td>
-                                                {% if registration_item.player %}
-                                                    {% with registration_item.player as player %}
-                                                        {% include 'common/_player_name.html' %}
-                                                    {% endwith %}
+                                                {% if user.is_authenticated %}
+                                                    {% if registration_item.player %}
+                                                        {% with registration_item.player as player %}
+                                                            {% include 'common/_player_name.html' %}
+                                                        {% endwith %}
+                                                    {% else %}
+                                                        {{ registration_item.full_name }}
+                                                    {% endif %}
                                                 {% else %}
-                                                    {{ registration_item.full_name }}
+                                                    {# Show abbreviated name for anonymous users #}
+                                                    {% if registration_item.player %}
+                                                        {{ registration_item.player.first_name }} {{ registration_item.player.last_name|slice:":1" }}.
+                                                    {% else %}
+                                                        {% with parts=registration_item.full_name.split %}
+                                                            {{ parts.0 }}{% if parts|length > 1 %} {{ parts|last|slice:":1" }}.{% endif %}
+                                                        {% endwith %}
+                                                    {% endif %}
                                                 {% endif %}
                                             </td>
                                             <td>
