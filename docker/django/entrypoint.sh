@@ -33,4 +33,11 @@ done
 
 mkdir -p /app/media/uploads /app/media/uploads/gdpr /app/media/tournament/gdpr || true
 
+>&2 echo 'Running database migrations...'
+python manage.py migrate
+
+>&2 echo 'Collecting static files...'
+python manage.py collectstatic --noinput
+
+>&2 echo 'Container startup complete, starting application...'
 exec "$@"
