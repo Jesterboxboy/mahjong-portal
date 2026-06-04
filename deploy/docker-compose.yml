@@ -1,16 +1,17 @@
-version: '2'
-
 volumes:
   postgres_production_data: {}
 
 services:
   web:
-    image: ghcr.io/mahjongrepository/mahjong-portal:latest
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
     env_file:
-      - ./.envs/.production.env
+      - .envs/.production.env
     depends_on:
       - db
     volumes:
+      - ./server:/app/
       - ./files/collected_static:/app/collected_static/
       - ./files/whoosh_index:/app/whoosh_index/
       - ./files/tmp:/tmp
@@ -25,13 +26,18 @@ services:
     ports:
       - '6101:6101'
     command: /usr/local/bin/gunicorn mahjong_portal.wsgi --bind=0.0.0.0:6101 --workers=2 --log-level=info --chdir=/app/
+    networks:
+      - shared
+      - default
 
   cronjobs:
-    image: ghcr.io/mahjongrepository/mahjong-portal:latest
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
     depends_on:
       - db
     env_file:
-      - ./.envs/.production.env
+      - .envs/.production.env
     volumes:
       - ./files/whoosh_index:/app/whoosh_index/
       - ./files/tmp:/tmp
@@ -48,7 +54,7 @@ services:
   db:
     image: postgres:15.3-alpine3.18
     env_file:
-      - ./.envs/.production.env
+      - .envs/.production.env
     restart: always
     logging:
       driver: json-file
@@ -57,3 +63,8 @@ services:
         max-file: '5'
     volumes:
       - postgres_production_data:/var/lib/postgresql/data
+
+networks:
+  shared:
+    name: pantheon-connect
+    external: true
