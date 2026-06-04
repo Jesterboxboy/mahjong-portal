@@ -130,7 +130,7 @@
                             <a href="{% url 'news_detail' article.slug %}" class="stretched-link text-decoration-none">{{ article.title }}</a>
                         </h6>
                         {% if article.excerpt %}
-                            <p class="card-text text-muted small">{{ article.excerpt|truncatewords:15 }}</p>
+                            <p class="card-text text-muted small">{{ article.excerpt|safe }}</p>
                         {% endif %}
                     </div>
                     <div class="card-footer text-muted small">{{ article.published_date|date:"d.m.Y" }}</div>

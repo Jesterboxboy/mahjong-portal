@@ -26,7 +26,7 @@ RUN chmod +x /entrypoint.sh
 
 ADD ./docker/django/crontab /etc/crontabs/root
 
-RUN addgroup -S docker && adduser -S docker-user -G docker
+RUN addgroup -g 989 -S docker && adduser -S docker-user -G docker
 
 COPY ./server/ /app/
 WORKDIR /app/

@@ -31,7 +31,8 @@ until postgres_ready; do
   sleep 1
 done
 
-mkdir -p /app/media/uploads /app/media/uploads/gdpr /app/media/tournament/gdpr || true
+mkdir -p /app/media/uploads /app/media/uploads/gdpr /app/media/tournament/gdpr /app/collected_static || true
+chmod -R 775 /app/media /app/collected_static 2>/dev/null || true
 
 >&2 echo 'Running database migrations...'
 python manage.py migrate

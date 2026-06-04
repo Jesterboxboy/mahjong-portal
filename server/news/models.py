@@ -2,6 +2,8 @@
 
 from django.db import models
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
+from filebrowser.fields import FileBrowseField
 
 
 class NewsArticle(models.Model):
@@ -17,7 +19,14 @@ class NewsArticle(models.Model):
     slug = models.SlugField(max_length=255, unique=True)
     excerpt = models.TextField(blank=True, default="")
     body = models.TextField(blank=True, default="")
-    image = models.URLField(blank=True, default="")
+    image = FileBrowseField(
+        _("Image (from media library)"),
+        max_length=200,
+        directory="news/",
+        extensions=[".jpg", ".jpeg", ".png", ".gif", ".webp"],
+        null=True,
+        blank=True,
+    )
     published_date = models.DateField()
     is_published = models.BooleanField(default=False)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=NEWS)
