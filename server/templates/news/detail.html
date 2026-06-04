@@ -10,7 +10,7 @@
     {% endif %}
     <meta property="og:title" content="{{ article.title }}">
     {% if article.image %}
-        <meta property="og:image" content="{{ article.image }}">
+        <meta property="og:image" content="{{ article.image.url }}">
     {% endif %}
 {% endblock %}
 
@@ -33,7 +33,7 @@
         </header>
 
         {% if article.image %}
-            <img src="{{ article.image }}" alt="{{ article.title }}" class="img-fluid rounded mb-4" style="max-height: 400px; object-fit: cover; width: 100%;">
+            <img src="{{ article.image.url }}" alt="{{ article.title }}" class="img-fluid rounded mb-4" style="max-height: 400px; object-fit: cover; width: 100%;">
         {% endif %}
 
         {% if article.excerpt %}

@@ -13,7 +13,7 @@
                 <div class="col">
                     <div class="card h-100">
                         {% if article.image %}
-                            <img src="{{ article.image }}" class="card-img-top" alt="{{ article.title }}" style="max-height: 200px; object-fit: cover;">
+                            <img src="{{ article.image.url }}" class="card-img-top" alt="{{ article.title }}" style="max-height: 200px; object-fit: cover;">
                         {% endif %}
                         <div class="card-body">
                             <span class="badge {% if article.category == 'veranstaltung' %}bg-primary{% else %}bg-secondary{% endif %} mb-2">
