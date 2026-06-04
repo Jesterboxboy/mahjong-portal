@@ -37,11 +37,11 @@
         {% endif %}
 
         {% if article.excerpt %}
-            <p class="lead">{{ article.excerpt }}</p>
+            <p class="lead">{{ article.excerpt|safe }}</p>
         {% endif %}
 
         <div class="mt-3">
-            {{ article.body|linebreaks }}
+            {{ article.body|safe }}
         </div>
     </article>
 

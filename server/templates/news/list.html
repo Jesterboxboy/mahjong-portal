@@ -23,7 +23,7 @@
                                 <a href="{% url 'news_detail' article.slug %}" class="text-decoration-none">{{ article.title }}</a>
                             </h5>
                             {% if article.excerpt %}
-                                <p class="card-text text-muted">{{ article.excerpt|truncatewords:30 }}</p>
+                                <div class="card-text text-muted">{{ article.excerpt|safe }}</div>
                             {% endif %}
                         </div>
                         <div class="card-footer text-muted small">

@@ -14,7 +14,14 @@ class NewsArticleAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
     date_hierarchy = "published_date"
     ordering = ["-published_date"]
-    exclude = ["image"]
+    fieldsets = (
+        (None, {
+            "fields": ("title", "slug", "category", "published_date", "is_published")
+        }),
+        ("Content", {
+            "fields": ("excerpt", "body", "image")
+        }),
+    )
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
