@@ -2454,8 +2454,8 @@ msgstr "Der Verband"
 msgid "Toggle theme"
 msgstr "Theme umschalten"
 
-msgid "Riichi Mahjong in Austria"
-msgstr "Riichi Mahjong in Österreich"
+msgid "Austrian Riichi Mahjong Association"
+msgstr "Österreichischer Riichi Mahjong Verband"
 
 msgid "Strategy, experience and luck determine victory in this Japanese game for four players."
 msgstr "Strategie, Erfahrung und Glück bestimmen den Sieg in diesem japanischen Spiel für vier Personen."

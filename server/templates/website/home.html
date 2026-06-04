@@ -10,16 +10,13 @@
 {% block main_class %}has-hero{% endblock %}
 
 {% block hero %}
-<div style="min-height:35vh; padding-top:40px; padding-bottom:3.5rem;
+<div style="min-height:35vh; padding-top:80px; padding-bottom:3.5rem;
             background: linear-gradient(rgba(20,10,35,.65), rgba(10,20,50,.72)),
                         url('{% static "img/banner.jpg" %}') center/cover no-repeat;
             display:flex; align-items:flex-end;">
     <div class="container text-white">
-        <p class="text-uppercase fw-semibold small mb-3" style="letter-spacing:.12em; opacity:.7;">
-            Österreichischer Riichi Mahjong Verband
-        </p>
         <h1 class="display-4 fw-bold mb-3" style="max-width:700px; line-height:1.15;">
-            {% trans "Riichi Mahjong in Austria" %}
+            {% trans "Austrian Riichi Mahjong Association" %}
         </h1>
         <p class="lead mb-0" style="max-width:620px; opacity:.85;">
             {% trans "Strategy, experience and luck determine victory in this Japanese game for four players." %}
