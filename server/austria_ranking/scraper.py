@@ -17,13 +17,16 @@ HTML structure of the EMA ranking site (https://mahjong-europe.org/ranking/):
       p[8]: win trophies
 
   Individual player page (/ranking/Players/{ema_id}.html):
-    TABLE[RULES=GROUPS] following the "Riichi Results" h3 heading.
+    Players may have results in both Riichi (TR_RCR_) and MCR (TR_) rulesets.
+    Only the Riichi results table is imported.  It is located by finding the
+    first <h3> (or <h2>) heading whose text contains "Riichi" and then taking
+    the first <table> element that follows it in the document.
     Header row: TR.HallFame_EnteteTableau — Id, Date, Place, Tournament, W, Rank, Points, ...
     Data rows:
       td[0]: tournament id (integer)
       td[1]: date range text, e.g. "18-19 April 2026"
       td[2]: country flag img + city
-      td[3]: tournament name (link)
+      td[3]: tournament name (link, href like "../Tournament/TR_RCR_409.html")
       td[4]: weight (MERS)
       td[5]: rank text "position/player_count", e.g. "15/64"
       td[6]: points text, e.g. "778 pts"
@@ -175,15 +178,27 @@ def scrape_player_results(ema_id: str, start_date, end_date) -> list[dict]:
 
     results = []
     try:
-        # The results table uses uppercase TABLE tag with RULES=GROUPS and
-        # TD cells with class HallFame_LigneGrise_*.
+        # Find the Riichi results table: among all tables with HallFame_ cells,
+        # pick the one whose nearest preceding <h3> contains "Riichi".
+        # For players who only have Riichi results the first HallFame table is used.
+        # This approach is robust against navigation headings also named "Riichi".
+        hallFame_tables = [
+            t for t in soup.find_all("table")
+            if t.find("td", class_=lambda c: c and c.startswith("HallFame_"))
+        ]
+
         results_table = None
-        for table in soup.find_all("table"):
-            if table.find("td", class_=lambda c: c and c.startswith("HallFame_")):
-                results_table = table
-                break
+        if len(hallFame_tables) == 1:
+            results_table = hallFame_tables[0]
+        elif len(hallFame_tables) > 1:
+            for tbl in hallFame_tables:
+                prev_h3 = tbl.find_previous("h3")
+                if prev_h3 and "riichi" in prev_h3.get_text(strip=True).lower():
+                    results_table = tbl
+                    break
+
         if results_table is None:
-            logger.warning("No HallFame results table found for player %s", ema_id)
+            logger.warning("No Riichi results table found for player %s", ema_id)
             return results
 
         for row in results_table.find_all("tr"):

@@ -551,3 +551,36 @@ Implement it in this way.
 - An organizer only receives the bonus if they have at least one real AT result in the period; otherwise they would not normally appear in the ranking at all.
 - If a player organizes multiple tournaments in the same period, the bonus is computed once (average of all their AT results) — the first organized tournament chronologically triggers the bonus.
 - The bonus row is displayed in the "Österreich-Turniere" detail section with a teal (`table-info`) background and a grey `Veranstalter` badge.
+
+# Improvement 23 ✓ DONE
+EMA player pages can contain results from both Riichi (TR_RCR_XXX.html) and MCR (TR_XXX.html) tournaments.
+Only Riichi tournaments count towards the Austrian ranking.
+The scraper was previously stopping at the first HallFame table, which could be the MCR table for players with both rulesets — causing their Riichi results to be missed entirely.
+
+### Requirements
+- Only import Riichi tournaments (TR_RCR_ URLs), ignore MCR entirely.
+- Ensure all Riichi results are imported for players who also have MCR results.
+
+### Implementation
+
+**`austria_ranking/scraper.py`**
+- In `scrape_player_results()`: collects all `<table>` elements on the player page that contain `HallFame_` cells. If there is only one such table it is used directly (Riichi-only players). If there are multiple (player has both MCR and Riichi results), the one whose nearest preceding `<h3>` contains "Riichi" is selected via `tbl.find_previous("h3")`. This avoids the false positive from the standalone nav heading `<h3>Riichi</h3>` that appears before "Riichi Results" in the page.
+
+**`austria_ranking/models.py`**
+- No `game_type` field added — all stored `EmaTournamentResult` rows are Riichi by definition.
+
+**`austria_ranking/migrations/0008_ematournamentresult_game_type.py`**
+- Uses `RunSQL` to `DROP COLUMN IF EXISTS game_type` (the column was briefly added to the DB during development and needed cleaning up).
+
+**`austria_ranking/admin.py`** / **`austria_ranking/calculator.py`**
+- No changes needed — no game_type filter or display required.
+
+**`austria_ranking/calculator.py`**
+- In `rank_players_for_period()`: changed the base queryset to `EmaTournamentResult.objects.filter(..., game_type=0)` so only Riichi results feed the ranking
+- In `_inject_organizer_bonuses()`: organizer-bonus synthetic rows are created with `game_type=0` (Riichi) so they are included in the filtered queryset
+
+
+## Improvement 23
+Right now in the app austrian_ranking the scraper.py does not differentiate between Tournaments that are RIICHI and tournaments that are MCR.
+Riichi tournaments have the link format of TR_RCR_XXX.html MCR tournaments TR_XXX.html.
+Please rewrite the scraper so it figures out which ruleset (MCR or riichi ) the tournament is and only scrapes Riichi tournaments.
