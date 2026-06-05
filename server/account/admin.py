@@ -41,6 +41,19 @@ class CustomUserAdmin(UserAdmin):
 class AttachingPlayerRequestAdmin(admin.ModelAdmin):
     list_display = ["created_on", "user", "player", "contacts", "is_processed"]
     raw_id_fields = ["player"]
+    actions = ["approve_attach_request"]
+
+    @admin.action(description=_("Approve: link player to user account"))
+    def approve_attach_request(self, request, queryset):
+        approved = 0
+        for attach_request in queryset.filter(is_processed=False):
+            user = attach_request.user
+            user.attached_player = attach_request.player
+            user.save(update_fields=["attached_player"])
+            attach_request.is_processed = True
+            attach_request.save(update_fields=["is_processed"])
+            approved += 1
+        self.message_user(request, _("%(count)d request(s) approved.") % {"count": approved})
 
 
 class PermissionAdmin(admin.ModelAdmin):

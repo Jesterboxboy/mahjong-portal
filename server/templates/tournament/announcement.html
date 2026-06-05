@@ -181,7 +181,7 @@
                                         <tr {% if registration_item.is_highlighted %}class="table-success" {% endif %}>
                                             <th scope="row">{{ forloop.counter }}</th>
                                             <td>
-                                                {% if user.is_authenticated %}
+                                                {% if user.is_authenticated and user.attached_player %}
                                                     {% if registration_item.player %}
                                                         {% with registration_item.player as player %}
                                                             {% include 'common/_player_name.html' %}
@@ -190,7 +190,7 @@
                                                         {{ registration_item.full_name }}
                                                     {% endif %}
                                                 {% else %}
-                                                    {# Show abbreviated name for anonymous users #}
+                                                    {# Show abbreviated name for users without a linked player profile #}
                                                     {% if registration_item.player %}
                                                         {{ registration_item.player.first_name }} {{ registration_item.player.last_name|slice:":1" }}.
                                                     {% else %}

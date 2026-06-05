@@ -61,7 +61,7 @@
                     <th class="text-end">AT-Punkte</th>
                     <th class="text-end">Ausland (Top 3)</th>
                     <th class="text-end fw-bold">Gesamt</th>
-                    {% if user.is_authenticated %}<th></th>{% endif %}
+                    {% if user.is_authenticated and user.attached_player %}<th></th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -69,21 +69,21 @@
                 <tr{% if ranking.attendance_status == "yes" %} style="--bs-table-bg:#e8f5e9;"{% elif ranking.attendance_status == "no" %} style="--bs-table-bg:#ffebee;"{% endif %}>
                     <td class="fw-bold">{{ ranking.rank_position }}</td>
                     <td>
-                        {% if user.is_authenticated and ranking.player %}
+                        {% if user.is_authenticated and user.attached_player and ranking.player %}
                             <a href="{% url 'player_details' ranking.player.slug %}">{{ ranking.display_name }}</a>
-                        {% elif user.is_authenticated %}
+                        {% elif user.is_authenticated and user.attached_player %}
                             {{ ranking.display_name }}
                         {% else %}
                             {% with parts=ranking.display_name.split %}
                                 {{ parts.0 }}{% if parts|length > 1 %} {{ parts|last|slice:":1" }}.{% endif %}
                             {% endwith %}
                         {% endif %}
-                        {% if ranking.has_crown %}<span class="text-warning ms-1 fw-bold" title="{% trans 'Fixed seat' %}">👑</span>{% endif %}{% if user.is_authenticated and ranking.has_seat %}<span class="text-success ms-1 fw-bold" title="{% trans 'Confirmed seat' %}">✓</span>{% endif %}
+                        {% if ranking.has_crown %}<span class="text-warning ms-1 fw-bold" title="{% trans 'Fixed seat' %}">👑</span>{% endif %}{% if user.is_authenticated and user.attached_player and ranking.has_seat %}<span class="text-success ms-1 fw-bold" title="{% trans 'Confirmed seat' %}">✓</span>{% endif %}
                     </td>
                     <td class="text-end">{{ ranking.at_points }}</td>
                     <td class="text-end">{{ ranking.foreign_points }}</td>
                     <td class="text-end fw-bold">{{ ranking.total_points }}</td>
-                    {% if user.is_authenticated %}
+                    {% if user.is_authenticated and user.attached_player %}
                     <td>
                         <button class="btn btn-outline-secondary btn-sm"
                                 type="button"
@@ -95,7 +95,7 @@
                     </td>
                     {% endif %}
                 </tr>
-                {% if user.is_authenticated %}
+                {% if user.is_authenticated and user.attached_player %}
                 <tr class="collapse" id="details-{{ ranking.pk }}">
                     <td colspan="6" class="py-2 px-4 bg-body-secondary">
                         <div class="row g-3">

@@ -580,7 +580,58 @@ The scraper was previously stopping at the first HallFame table, which could be 
 - In `_inject_organizer_bonuses()`: organizer-bonus synthetic rows are created with `game_type=0` (Riichi) so they are included in the filtered queryset
 
 
-## Improvement 23
-Right now in the app austrian_ranking the scraper.py does not differentiate between Tournaments that are RIICHI and tournaments that are MCR.
-Riichi tournaments have the link format of TR_RCR_XXX.html MCR tournaments TR_XXX.html.
-Please rewrite the scraper so it figures out which ruleset (MCR or riichi ) the tournament is and only scrapes Riichi tournaments.
+# Improvement 24 ✓ DONE
+Only show full names and additional details in the following pages
+* de/rangliste/
+* de/tournaments/riichi/tournament-name
+* /de/tournaments/riichi/tournament-name/announcement/
+when user is logged in AND has a connected Player profile.
+Right now being logged in is enough.
+
+### Implementation
+
+**`templates/website/rangliste.html`**
+- All occurrences of `{% if user.is_authenticated %}` that gate full-name display, player profile links, the Details column header, the Details button, and the Details collapse row changed to `{% if user.is_authenticated and user.attached_player %}`
+- The crown/seat ✓ indicator condition similarly updated to `{% if user.is_authenticated and user.attached_player and ranking.has_seat %}`
+- Users who are logged in but have no linked player profile now see abbreviated names (same as anonymous users)
+
+**`templates/tournament/_tournament_results.html`**
+- `{% if user.is_authenticated %}` → `{% if user.is_authenticated and user.attached_player %}` for the full-name-with-link block in tournament result rows
+
+**`templates/tournament/announcement.html`**
+- `{% if user.is_authenticated %}` → `{% if user.is_authenticated and user.attached_player %}` for the participants list name display
+- Comment updated from "anonymous users" to "users without a linked player profile"
+
+
+# Improvement 25 ✓ DONE
+If a player is logged in but has no connected player profile add an option under
+https://portal.riichimahjong.at/de/account/settings/ to create an "Attach player request"
+(from account app) that can then be approved by an admin in django admin.
+
+### Implementation
+
+**`account/views.py`**
+- Added `from django.db.models import Q` import
+- Added `player_search_results`, `player_search_query`, `player_search_performed`, and `pending_attach_request` variables
+- On page load: queries any unprocessed `AttachingPlayerRequest` for the current user (if no attached player)
+- Two new POST action branches:
+  - `action=search_player`: queries `Player` by first/last name using `Q(first_name__icontains=…) | Q(last_name__icontains=…)`, returns up to 20 matches; sets `player_search_performed=True`
+  - `action=create_attach_request`: looks up player by PK, creates `AttachingPlayerRequest` if no identical pending request exists, redirects with success message; duplicate submissions are silently ignored
+- Tenhou update path preserved as `elif` (no behavioural change)
+- New context variables passed to template: `pending_attach_request`, `player_search_results`, `player_search_query`, `player_search_performed`
+
+**`templates/account/settings.html`**
+- "Player Profile" card now has three states when `not user.attached_player`:
+  1. **Pending request**: shows info alert with pending player name
+  2. **Search results** (`player_search_performed` and results exist): shows radio-button list of matching players + contacts textarea + submit
+  3. **No match** (`player_search_performed` and empty results): shows "no players found" warning
+  4. **Search form** (step 1, shown when no results yet): first/last name text input + Search button
+
+**`account/admin.py`**
+- Added `approve_attach_request` admin action to `AttachingPlayerRequestAdmin`:
+  - Iterates unprocessed requests in the queryset
+  - Sets `user.attached_player = request.player` and `request.is_processed = True`
+  - Reports count of approved requests via `message_user`
+- `actions = ["approve_attach_request"]` added to the admin class
+
+

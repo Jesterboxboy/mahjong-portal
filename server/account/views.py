@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_protect
@@ -50,6 +51,10 @@ def account_settings(request):
     error_code = None
     current_player = None
     current_tenhou_account = None
+    player_search_results = None
+    player_search_query = None
+    player_search_performed = False
+    pending_attach_request = None
     is_anonymous = request.user is not None and isinstance(request.user, AnonymousUser)
     if is_anonymous:
         return render(request, "access_denied.html", status=403)
@@ -58,8 +63,35 @@ def account_settings(request):
         current_player = request.user.attached_player
         current_tenhou_account = current_player.tenhou_object
 
+    if request.user.is_authenticated and not request.user.attached_player:
+        pending_attach_request = AttachingPlayerRequest.objects.filter(user=request.user, is_processed=False).first()
+
     if request.POST:
-        if request.user is not None and not is_anonymous and request.user.is_authenticated:
+        action = request.POST.get("action")
+
+        if action == "search_player" and not request.user.attached_player:
+            query = request.POST.get("player_search", "").strip()
+            player_search_query = query
+            player_search_performed = True
+            if query:
+                player_search_results = Player.objects.filter(
+                    Q(first_name__icontains=query) | Q(last_name__icontains=query)
+                ).order_by("last_name", "first_name")[:20]
+
+        elif action == "create_attach_request" and not request.user.attached_player:
+            player_id = request.POST.get("player_id")
+            contacts = request.POST.get("contacts", "").strip()
+            if player_id and contacts:
+                try:
+                    player = Player.objects.get(pk=player_id)
+                    if not AttachingPlayerRequest.objects.filter(user=request.user, player=player, is_processed=False).exists():
+                        AttachingPlayerRequest.objects.create(user=request.user, player=player, contacts=contacts)
+                    messages.success(request, _("Your attach request was submitted. An admin will review and link your account."))
+                    return redirect("account_settings")
+                except Player.DoesNotExist:
+                    messages.error(request, _("Player not found."))
+
+        elif request.user is not None and not is_anonymous and request.user.is_authenticated:
             if current_player is not None and current_player.tenhou_object is not None:
                 current_tenhou = current_player.tenhou_object
                 current_tenhou_nickname = current_tenhou.tenhou_username
@@ -112,6 +144,10 @@ def account_settings(request):
             "player": current_player,
             "tenhou_account": current_tenhou_account,
             "attendance_data": attendance_data,
+            "pending_attach_request": pending_attach_request,
+            "player_search_results": player_search_results,
+            "player_search_query": player_search_query,
+            "player_search_performed": player_search_performed,
         },
     )
 
