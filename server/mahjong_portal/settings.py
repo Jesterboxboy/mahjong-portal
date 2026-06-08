@@ -41,6 +41,7 @@ EMA_RANKING_URL = os.environ.get("EMA_RANKING_URL", "http://mahjong-europe.org/r
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if h]
 
 SITE_ID = 1
 
@@ -147,7 +148,7 @@ LANGUAGES = [["de", "German"], ["en", "English"]]
 
 LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
 
-TIME_ZONE = "UTC"
+TIME_ZONE = os.environ.get("TIME_ZONE", "Europe/Vienna")
 
 USE_I18N = True
 
