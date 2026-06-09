@@ -139,7 +139,7 @@ class TournamentAdmin(TranslationAdmin):
 
     ordering = ["-end_date"]
 
-    filter_horizontal = ["clubs"]
+    filter_horizontal = ["clubs", "non_playing_organizers"]
     actions = [load_pantheon_results]
 
     fieldsets = [
@@ -177,7 +177,7 @@ class TournamentAdmin(TranslationAdmin):
                     "new_pantheon_id",
                     "ema_id",
                     "online_config",
-                    "non_playing_organizer",
+                    "non_playing_organizers",
                 ]
             },
         ),

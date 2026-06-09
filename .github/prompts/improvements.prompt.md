@@ -635,3 +635,33 @@ https://portal.riichimahjong.at/de/account/settings/ to create an "Attach player
 - `actions = ["approve_attach_request"]` added to the admin class
 
 
+# Improvement 26 ✓ DONE
+Change the non-playing organizer Field in tournament model to list of players and make it editable in admin/tournament/tournament/6/change/.
+The formula for calculating the organizer bonus per tournament in a given quota period for x players is the following for player y:
+
+((all austrian ranking points in the quota period(betwen start date and end date) for player y)/(number of played austrian tournaments played in given quota period for player x))/x
+
+Adapt the ranking calculation to fit the above.
+
+### Implementation
+
+**`tournament/models.py`**
+- `non_playing_organizer` (`ForeignKey`) removed; replaced with `non_playing_organizers` (`ManyToManyField(Player, blank=True, related_name="organized_tournaments")`)
+
+**`tournament/migrations/0069_tournament_non_playing_organizers_m2m.py`** (manual)
+- `RemoveField` for old `non_playing_organizer` FK
+- `AddField` for new `non_playing_organizers` M2M
+
+**`tournament/admin.py`**
+- `filter_horizontal` extended to include `"non_playing_organizers"` — renders the dual-select widget in admin
+- Fieldset entry renamed from `"non_playing_organizer"` to `"non_playing_organizers"`
+
+**`austria_ranking/calculator.py` — `_inject_organizer_bonuses()`**
+- Queryset changed from `non_playing_organizer__isnull=False` + `select_related` → `non_playing_organizers__isnull=False` + `.prefetch_related("non_playing_organizers").distinct()`
+- Tracks `(tournament_pk, ema_id)` pairs (not just ema_id) so a player can receive a bonus for multiple tournaments they organized
+- `x = len(organizers)` — number of non-playing organizers on the tournament
+- New formula: `bonus = round((sum_AT_points / count_AT_tournaments) / x)`
+  - `sum_AT_points` = total AT points player y earned in the quota period
+  - `count_AT_tournaments` = number of AT results player y already has in `player_data`
+  - dividing by `x` splits the bonus among all co-organizers
+- `player_count=x` stored in the persisted `EmaTournamentResult` row (was `1` before)

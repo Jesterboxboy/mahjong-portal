@@ -140,14 +140,12 @@ class Tournament(BaseModel):
         blank=True,
     )
     online_config = models.ForeignKey(OnlineTournamentConfig, on_delete=models.PROTECT, null=True, blank=True)
-    non_playing_organizer = models.ForeignKey(
+    non_playing_organizers = models.ManyToManyField(
         Player,
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name="organized_tournaments",
-        verbose_name=_("Non-playing organizer"),
-        help_text=_("A player who organizes this tournament but does not compete. They receive the average of their AT points for this quota period."),
+        verbose_name=_("Non-playing organizers"),
+        help_text=_("Players who organize this tournament but do not compete. Each receives a share of their average AT points for this quota period."),
     )
 
     def __unicode__(self):

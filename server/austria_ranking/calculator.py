@@ -33,10 +33,11 @@ def _inject_organizer_bonuses(
     player_lookup: dict,
 ) -> None:
     """
-    For each tournament in the quota period that has a non_playing_organizer,
-    compute the average of that player's existing AT base points and inject a
-    synthetic result (position 999) both into player_data (for scoring) and as
-    a persisted EmaTournamentResult row (for the detail view).
+    For each tournament in the quota period that has non_playing_organizers,
+    compute each organizer's bonus and inject it as a synthetic result (position 999).
+
+    Formula for organizer y on a tournament with x organizers:
+        bonus = (sum_AT_points_y / count_AT_tournaments_y) / x
 
     Only organizers who already have at least one AT result in the period
     receive the bonus (otherwise the average is undefined).
@@ -45,69 +46,74 @@ def _inject_organizer_bonuses(
 
     organizer_tournaments = (
         PortalTournament.objects.filter(
-            non_playing_organizer__isnull=False,
+            non_playing_organizers__isnull=False,
             end_date__gte=quota_period.start_date,
             end_date__lte=quota_period.end_date,
         )
-        .select_related("non_playing_organizer")
+        .prefetch_related("non_playing_organizers")
+        .distinct()
         .order_by("end_date")
     )
 
-    # Track which organizer EMA IDs we've already processed (one bonus per player per period)
-    processed: set[str] = set()
+    # Track (tournament_pk, ema_id) pairs already processed to avoid duplicates
+    processed: set[tuple] = set()
 
     for tournament in organizer_tournaments:
-        organizer = tournament.non_playing_organizer
-        if organizer is None or not organizer.ema_id:
+        organizers = [p for p in tournament.non_playing_organizers.all() if p.ema_id]
+        if not organizers:
             continue
-        ema_id = organizer.ema_id
-        if ema_id in processed:
-            continue
-        processed.add(ema_id)
+        x = len(organizers)  # number of organizers on this tournament
 
-        # Only give the bonus if the player has actual AT results in this period
-        at_results = player_data.get(ema_id, {}).get("at_results", [])
-        if not at_results:
-            continue
+        for organizer in organizers:
+            ema_id = organizer.ema_id
+            key = (tournament.pk, ema_id)
+            if key in processed:
+                continue
+            processed.add(key)
 
-        avg_points = round(sum(r["points"] for r in at_results) / len(at_results))
-        if avg_points <= 0:
-            continue
+            # Only give the bonus if the player has actual AT results in this period
+            at_results = player_data.get(ema_id, {}).get("at_results", [])
+            if not at_results:
+                continue
 
-        bonus_name = tournament.name
+            count_at = len(at_results)
+            sum_at = sum(r["points"] for r in at_results)
+            avg_points = round((sum_at / count_at) / x)
+            if avg_points <= 0:
+                continue
 
-        # Inject into in-memory player_data.
-        # year=None bypasses the membership-fee year check since the bonus is
-        # already derived from fee-validated actual results.
-        player_data[ema_id]["at_results"].append(
-            {
-                "name": bonus_name,
-                "points": avg_points,
-                "year": None,
-                "is_organizer_bonus": True,
-            }
-        )
+            # Inject into in-memory player_data.
+            # year=None bypasses the membership-fee year check since the bonus is
+            # already derived from fee-validated actual results.
+            player_data[ema_id]["at_results"].append(
+                {
+                    "name": tournament.name,
+                    "points": avg_points,
+                    "year": None,
+                    "is_organizer_bonus": True,
+                }
+            )
 
-        # Persist a synthetic EmaTournamentResult so the detail view can show it
-        display_name: str = player_data[ema_id]["display_name"]
-        parts = display_name.split(maxsplit=1)
-        first_name = parts[0]
-        last_name = parts[1] if len(parts) > 1 else ""
-        EmaTournamentResult.objects.update_or_create(
-            quota_period=quota_period,
-            ema_id=ema_id,
-            tournament_name=bonus_name,
-            end_date=quota_period.end_date,
-            defaults={
-                "first_name": first_name,
-                "last_name": last_name,
-                "tournament_country_code": "AT",
-                "position": 999,
-                "player_count": 1,
-                "points": avg_points,
-                "is_austrian_tournament": True,
-            },
-        )
+            # Persist a synthetic EmaTournamentResult so the detail view can show it
+            display_name: str = player_data[ema_id]["display_name"]
+            parts = display_name.split(maxsplit=1)
+            first_name = parts[0]
+            last_name = parts[1] if len(parts) > 1 else ""
+            EmaTournamentResult.objects.update_or_create(
+                quota_period=quota_period,
+                ema_id=ema_id,
+                tournament_name=tournament.name,
+                end_date=quota_period.end_date,
+                defaults={
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "tournament_country_code": "AT",
+                    "position": 999,
+                    "player_count": x,
+                    "points": avg_points,
+                    "is_austrian_tournament": True,
+                },
+            )
 
 
 def rank_players_for_period(quota_period) -> list[dict]:
@@ -157,9 +163,9 @@ def rank_players_for_period(quota_period) -> list[dict]:
         paid_years_lookup[ema_id].add(fee.year)
 
     # ── Organizer bonus ─────────────────────────────────────────────────────
-    # A player set as non_playing_organizer on an Austrian tournament within the
-    # quota period receives the average of their existing AT base points for the
-    # period added as a synthetic result (position 999).
+    # Each player in a tournament's non_playing_organizers list receives a
+    # bonus equal to their average AT points divided by the number of organizers
+    # on that tournament: (sum_AT / count_AT) / x
     _inject_organizer_bonuses(quota_period, player_data, player_lookup)
     # ────────────────────────────────────────────────────────────────────────
 
