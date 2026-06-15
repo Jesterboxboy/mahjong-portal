@@ -4,6 +4,7 @@ from datetime import date, datetime
 
 from django import forms
 from django.contrib import admin, messages
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -11,8 +12,7 @@ from django.utils.text import slugify
 from modeltranslation.admin import TranslationAdmin
 from tinymce.widgets import TinyMCE
 
-from django.db import transaction
-
+from mahjong_portal.notifications import registrant_email
 from player.models import Player
 from settings.models import Country
 from tournament.models import (
@@ -21,10 +21,38 @@ from tournament.models import (
     OnlineTournamentRegistration,
     Tournament,
     TournamentApplication,
+    TournamentEmailTemplate,
     TournamentRegistration,
     TournamentResult,
 )
 from utils.new_pantheon import get_rating_table
+
+
+def send_registrant_email(modeladmin, request, queryset):
+    """Send each selected tournament's registrant email to all its approved players."""
+    total = sum(registrant_email(tournament) for tournament in queryset)
+    modeladmin.message_user(request, f"Registrant email sent to {total} approved player(s).", level=messages.SUCCESS)
+
+
+send_registrant_email.short_description = "Send bulk email to registered players"
+
+
+def approve_and_send_confirmation(modeladmin, request, queryset):
+    """Approve the selected registrations (triggers the confirmation email on save)."""
+    count = 0
+    for registration in queryset.filter(is_approved=False):
+        registration.is_approved = True
+        registration.save()
+        count += 1
+    modeladmin.message_user(request, f"Approved {count} registration(s).", level=messages.SUCCESS)
+
+
+approve_and_send_confirmation.short_description = "Approve & send confirmation email"
+
+
+class TournamentEmailTemplateInline(admin.StackedInline):
+    model = TournamentEmailTemplate
+    extra = 0
 
 
 def load_pantheon_results(modeladmin, request, queryset):
@@ -140,7 +168,8 @@ class TournamentAdmin(TranslationAdmin):
     ordering = ["-end_date"]
 
     filter_horizontal = ["clubs", "non_playing_organizers"]
-    actions = [load_pantheon_results]
+    actions = [load_pantheon_results, send_registrant_email]
+    inlines = [TournamentEmailTemplateInline]
 
     fieldsets = [
         (
@@ -181,7 +210,10 @@ class TournamentAdmin(TranslationAdmin):
                 ]
             },
         ),
-        ("Tournament Info Tab", {"fields": ["venue_address", "schedule", "lunch_options", "contact_info"]}),
+        (
+            "Tournament Info Tab",
+            {"fields": ["venue_address", "schedule", "lunch_options", "contact_info", "organizer_emails"]},
+        ),
         ("GDPR", {"fields": ["gdpr_document", "gdpr_file"]}),
     ]
 
@@ -208,10 +240,13 @@ class TournamentRegistrationAdmin(admin.ModelAdmin):
         "player",
         "city_object",
         "allow_to_save_data",
+        "created_on",
     ]
 
     raw_id_fields = ["tournament", "player", "city_object"]
-    list_filter = [["tournament", admin.RelatedOnlyFieldListFilter]]
+    list_filter = [["tournament", admin.RelatedOnlyFieldListFilter], "created_on"]
+    readonly_fields = ["created_on"]
+    actions = [approve_and_send_confirmation]
 
 
 class OnlineTournamentRegistrationAdmin(admin.ModelAdmin):
@@ -228,10 +263,13 @@ class OnlineTournamentRegistrationAdmin(admin.ModelAdmin):
         "player",
         "city_object",
         "allow_to_save_data",
+        "created_on",
     ]
 
     raw_id_fields = ["tournament", "player", "city_object", "user"]
-    list_filter = [["tournament", admin.RelatedOnlyFieldListFilter]]
+    list_filter = [["tournament", admin.RelatedOnlyFieldListFilter], "created_on"]
+    readonly_fields = ["created_on"]
+    actions = [approve_and_send_confirmation]
 
 
 class MsOnlineTournamentRegistrationAdmin(admin.ModelAdmin):
@@ -248,10 +286,13 @@ class MsOnlineTournamentRegistrationAdmin(admin.ModelAdmin):
         "player",
         "city_object",
         "allow_to_save_data",
+        "created_on",
     ]
 
     raw_id_fields = ["tournament", "player", "city_object", "user"]
-    list_filter = [["tournament", admin.RelatedOnlyFieldListFilter]]
+    list_filter = [["tournament", admin.RelatedOnlyFieldListFilter], "created_on"]
+    readonly_fields = ["created_on"]
+    actions = [approve_and_send_confirmation]
 
 
 def _parse_date(value):

@@ -9,6 +9,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from account.models import PantheonInfoUpdateLog
+from mahjong_portal.notifications import notify_organizers_new_registration
 from pantheon_api.api_calls.user import get_pantheon_public_person_information
 from player.models import Player
 from player.player_helper import PlayerHelper
@@ -268,7 +269,7 @@ def pantheon_tournament_registration(request, tournament_id):
 
     if tournament.is_majsoul_tournament:
         # todo get ms_data from pantheon
-        MsOnlineTournamentRegistration.objects.create(
+        registration = MsOnlineTournamentRegistration.objects.create(
             tournament=tournament,
             user=user,
             ms_nickname=ms_nickname,
@@ -284,7 +285,7 @@ def pantheon_tournament_registration(request, tournament_id):
             confirm_code=confirm_code,
         )
     else:
-        OnlineTournamentRegistration.objects.create(
+        registration = OnlineTournamentRegistration.objects.create(
             tournament=tournament,
             user=user,
             tenhou_nickname=data["tenhou_id"],
@@ -297,6 +298,8 @@ def pantheon_tournament_registration(request, tournament_id):
             is_approved=player_is_approved,
             confirm_code=confirm_code,
         )
+
+    notify_organizers_new_registration(registration)
 
     return redirect(tournament.get_url())
 
@@ -355,6 +358,8 @@ def tournament_registration(request, tournament_id):
             message = _("Your registration was accepted!")
 
         instance.save()
+
+        notify_organizers_new_registration(instance)
 
         messages.success(request, message)
     else:

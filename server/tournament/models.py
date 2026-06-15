@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import re
+
 import ujson as json
 from django.db import models
 from django.urls import reverse
@@ -125,6 +127,12 @@ class Tournament(BaseModel):
     schedule = models.TextField(null=True, blank=True, verbose_name=_("Schedule / Itinerary"))
     lunch_options = models.TextField(null=True, blank=True, verbose_name=_("Lunch options"))
     contact_info = models.TextField(null=True, blank=True, verbose_name=_("Contact information"))
+    organizer_emails = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("Organizer notification emails"),
+        help_text=_("Email addresses (comma or newline separated) that receive a notice on each new registration."),
+    )
     gdpr_document = models.FileField(
         upload_to="tournament/gdpr/",
         null=True,
@@ -145,11 +153,16 @@ class Tournament(BaseModel):
         blank=True,
         related_name="organized_tournaments",
         verbose_name=_("Non-playing organizers"),
-        help_text=_("Players who organize this tournament but do not compete. Each receives a share of their average AT points for this quota period."),
+        help_text=_(
+            "Players who organize this tournament but do not compete. Each receives a share of their average AT points for this quota period."
+        ),
     )
 
     def __unicode__(self):
         return self.name
+
+    def get_organizer_emails(self):
+        return [e.strip() for e in re.split(r"[,\n;]", self.organizer_emails or "") if e.strip()]
 
     def get_url(self):
         if self.is_upcoming:
@@ -332,7 +345,39 @@ class TournamentResult(BaseModel):
         return round(((number_of_players - place) / (number_of_players - 1)) * 1000, 2)
 
 
-class TournamentRegistration(BaseModel):
+class RegistrationConfirmationMixin(models.Model):
+    """Sends a confirmation email whenever a registration becomes approved.
+
+    Covers both auto-approval at signup (created already approved) and the admin
+    pre-moderation flip (is_approved False -> True). No new fields, so no migration.
+    """
+
+    class Meta:
+        abstract = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_is_approved = self.is_approved
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if self.is_approved and (is_new or not self._original_is_approved):
+            from mahjong_portal.notifications import confirmation_email
+
+            confirmation_email(self)
+        self._original_is_approved = self.is_approved
+
+    def get_recipient_email(self):
+        """Best-effort email for the registrant; None if unavailable."""
+        user = getattr(self, "user", None)
+        if user and user.email:
+            return user.email
+        contact = getattr(self, "contact", "") or ""
+        return contact if "@" in contact else None
+
+
+class TournamentRegistration(RegistrationConfirmationMixin, BaseModel):
     tournament = models.ForeignKey(Tournament, related_name="tournament_registrations", on_delete=models.PROTECT)
     is_approved = models.BooleanField(default=True)
 
@@ -388,8 +433,11 @@ class TournamentRegistration(BaseModel):
     def get_safe_name(self, name):
         return name if name else ""
 
+    def get_recipient_email(self):
+        return self.email or None
 
-class OnlineTournamentRegistration(BaseModel):
+
+class OnlineTournamentRegistration(RegistrationConfirmationMixin, BaseModel):
     tournament = models.ForeignKey(Tournament, related_name="online_tournament_registrations", on_delete=models.PROTECT)
     is_approved = models.BooleanField(default=True)
 
@@ -430,7 +478,7 @@ class OnlineTournamentRegistration(BaseModel):
         return name if name else ""
 
 
-class MsOnlineTournamentRegistration(BaseModel):
+class MsOnlineTournamentRegistration(RegistrationConfirmationMixin, BaseModel):
     tournament = models.ForeignKey(
         Tournament, related_name="ms_online_tournament_registrations", on_delete=models.PROTECT
     )
@@ -475,6 +523,30 @@ class MsOnlineTournamentRegistration(BaseModel):
 
     def get_safe_name(self, name):
         return name if name else ""
+
+
+class TournamentEmailTemplate(BaseModel):
+    CONFIRMATION = "confirmation"
+    REGISTRANT = "registrant"
+    EMAIL_TYPES = [
+        (CONFIRMATION, _("Confirmation email (sent when a registration is approved)")),
+        (REGISTRANT, _("Registrant email (bulk send to all approved players)")),
+    ]
+
+    tournament = models.ForeignKey(Tournament, related_name="email_templates", on_delete=models.CASCADE)
+    email_type = models.CharField(max_length=20, choices=EMAIL_TYPES, verbose_name=_("Email type"))
+    subject = models.CharField(max_length=255, verbose_name=_("Subject"))
+    body = models.TextField(
+        verbose_name=_("Body"),
+        help_text=_("Supports {{first_name}} and {{last_name}} placeholders."),
+    )
+    reply_to = models.EmailField(blank=True, default="", verbose_name=_("Reply-to address"))
+
+    class Meta:
+        unique_together = ["tournament", "email_type"]
+
+    def __unicode__(self):
+        return "{} – {}".format(self.tournament, self.get_email_type_display())
 
 
 class TournamentApplication(BaseModel):

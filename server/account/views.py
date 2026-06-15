@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from account.forms import LoginForm
 from account.models import AttachingPlayerRequest, PantheonInfoUpdateLog, User
 from austria_ranking.models import EventAttendanceIntent, QuotaEvent
+from mahjong_portal.notifications import notify_superusers_attach_request
 from player.models import Player
 from player.player_helper import PlayerHelper
 from player.tenhou.models import TenhouAggregatedStatistics
@@ -84,9 +85,16 @@ def account_settings(request):
             if player_id and contacts:
                 try:
                     player = Player.objects.get(pk=player_id)
-                    if not AttachingPlayerRequest.objects.filter(user=request.user, player=player, is_processed=False).exists():
-                        AttachingPlayerRequest.objects.create(user=request.user, player=player, contacts=contacts)
-                    messages.success(request, _("Your attach request was submitted. An admin will review and link your account."))
+                    if not AttachingPlayerRequest.objects.filter(
+                        user=request.user, player=player, is_processed=False
+                    ).exists():
+                        attach_request = AttachingPlayerRequest.objects.create(
+                            user=request.user, player=player, contacts=contacts
+                        )
+                        notify_superusers_attach_request(attach_request)
+                    messages.success(
+                        request, _("Your attach request was submitted. An admin will review and link your account.")
+                    )
                     return redirect("account_settings")
                 except Player.DoesNotExist:
                     messages.error(request, _("Player not found."))
@@ -179,7 +187,8 @@ def request_player_and_user_connection(request, slug):
     if not contacts:
         return redirect("player_details", slug)
 
-    AttachingPlayerRequest.objects.create(user=request.user, player=player, contacts=contacts)
+    attach_request = AttachingPlayerRequest.objects.create(user=request.user, player=player, contacts=contacts)
+    notify_superusers_attach_request(attach_request)
     messages.success(request, _("Request was created."))
     return redirect("player_details", player.slug)
 
