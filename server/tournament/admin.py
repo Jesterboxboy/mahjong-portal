@@ -50,6 +50,31 @@ def approve_and_send_confirmation(modeladmin, request, queryset):
 approve_and_send_confirmation.short_description = "Approve & send confirmation email"
 
 
+def retry_pantheon_registration(modeladmin, request, queryset):
+    """Re-attempt the Pantheon event enrollment for the selected registrations.
+
+    Needed because re-saving an already approved registration does not re-fire the
+    approval hook, so there is no other retry path after a Pantheon outage.
+    """
+    from utils.new_pantheon import sync_registration_to_pantheon
+
+    succeeded = 0
+    failed = 0
+    for registration in queryset:
+        if sync_registration_to_pantheon(registration):
+            succeeded += 1
+        else:
+            failed += 1
+    modeladmin.message_user(
+        request,
+        f"Pantheon push: {succeeded} succeeded, {failed} skipped or failed.",
+        level=messages.SUCCESS if not failed else messages.WARNING,
+    )
+
+
+retry_pantheon_registration.short_description = "Retry Pantheon event registration"
+
+
 class TournamentEmailTemplateInline(admin.StackedInline):
     model = TournamentEmailTemplate
     extra = 0
@@ -241,12 +266,14 @@ class TournamentRegistrationAdmin(admin.ModelAdmin):
         "city_object",
         "allow_to_save_data",
         "created_on",
+        "pantheon_synced_on",
+        "pantheon_sync_error",
     ]
 
-    raw_id_fields = ["tournament", "player", "city_object"]
+    raw_id_fields = ["tournament", "player", "city_object", "user"]
     list_filter = [["tournament", admin.RelatedOnlyFieldListFilter], "created_on"]
     readonly_fields = ["created_on"]
-    actions = [approve_and_send_confirmation]
+    actions = [approve_and_send_confirmation, retry_pantheon_registration]
 
 
 class OnlineTournamentRegistrationAdmin(admin.ModelAdmin):

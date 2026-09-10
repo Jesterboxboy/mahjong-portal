@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -13,7 +15,7 @@ from mahjong_portal.notifications import notify_organizers_new_registration
 from pantheon_api.api_calls.user import get_pantheon_public_person_information
 from player.models import Player
 from player.player_helper import PlayerHelper
-from settings.models import City
+from settings.models import City, Country
 from tournament.forms import (
     MajsoulOnlineTournamentPantheonRegistrationForm,
     OnlineTournamentPantheonRegistrationForm,
@@ -29,6 +31,8 @@ from tournament.models import (
     TournamentResult,
 )
 from utils.general import get_end_of_day, get_random_confirm_code, split_name
+
+logger = logging.getLogger(__name__)
 
 
 def tournament_list(request, tournament_type=None, year=None):
@@ -124,12 +128,64 @@ def tournament_details(request, slug):
     )
 
 
+def _last_known_pantheon_phone(user):
+    """Phone as captured at the user's last login.
+
+    Frey only exposes a phone number to the authenticated `Me()` call, so the public
+    person lookup never has it. The login snapshot in PantheonInfoUpdateLog is the only
+    copy the portal ever sees; it may be stale until the user logs in again.
+    """
+    log = (
+        PantheonInfoUpdateLog.objects.filter(user=user, updated_information__has_key="phone")
+        .exclude(updated_information__phone="")
+        .order_by("-created_on")
+        .first()
+    )
+    return log and log.updated_information.get("phone") or ""
+
+
+def pantheon_registration_initial(user):
+    """Best-effort Pantheon prefill; returns only the keys that have a value."""
+    if not user.new_pantheon_id:
+        return {}
+
+    try:
+        data = get_pantheon_public_person_information(user.new_pantheon_id)
+    except Exception:  # noqa: BLE001
+        # a Pantheon outage must not break the announcement page
+        logger.exception("Could not load Pantheon data for user %s", user.pk)
+        return {}
+
+    first_name, last_name = split_name(data.get("title") or "")
+
+    country_code = data.get("country") or ""
+    country = Country.objects.filter(code__iexact=country_code).first()
+
+    initial = {
+        "first_name": first_name,
+        "last_name": last_name,
+        "city": data.get("city") or "",
+        "registration_country": country and country.name or country_code,
+        "email": user.email,
+        "phone": _last_known_pantheon_phone(user),
+    }
+    return {key: value for key, value in initial.items() if value}
+
+
 def tournament_announcement(request, slug):
     tournament = get_object_or_404(Tournament, slug=slug)
 
     initial = {"tournament": tournament}
     if tournament.city and tournament.fill_city_in_registration:
         initial["city"] = tournament.city.name
+
+    if (
+        tournament.is_pantheon_registration
+        and not tournament.is_online()
+        and tournament.opened_registration
+        and request.user.is_authenticated
+    ):
+        initial.update(pantheon_registration_initial(request.user))
 
     if tournament.is_online():
         if tournament.is_majsoul_tournament and tournament.is_pantheon_registration:
@@ -142,7 +198,7 @@ def tournament_announcement(request, slug):
         form = TournamentRegistrationForm(initial=initial)
 
     full_approved_players_count = 0
-    if tournament.is_online() or tournament.is_pantheon_registration:
+    if tournament.is_online():
         if tournament.is_majsoul_tournament:
             registration_results = (
                 MsOnlineTournamentRegistration.objects.filter(tournament=tournament)
@@ -185,13 +241,19 @@ def tournament_announcement(request, slug):
             is_already_registered = current_registration.exists()
             if is_already_registered:
                 registration_confirm_code = current_registration[0].confirm_code
-        elif tournament.is_online() or tournament.is_pantheon_registration:
+        elif tournament.is_online():
             current_registration = OnlineTournamentRegistration.objects.filter(
                 tournament=tournament, user=request.user, is_approved=True
             )
             is_already_registered = current_registration.exists()
             if is_already_registered:
                 registration_confirm_code = current_registration[0].confirm_code
+        elif tournament.is_pantheon_registration:
+            # not filtered by is_approved: a pending row must still hide the form,
+            # otherwise the user re-submits and creates duplicates
+            is_already_registered = TournamentRegistration.objects.filter(
+                tournament=tournament, user=request.user
+            ).exists()
 
     missed_tenhou_id_error = request.GET.get("error") == "tenhou_id"
     form_data_error = request.GET.get("error") == "form_data"
@@ -217,6 +279,11 @@ def tournament_announcement(request, slug):
 @login_required
 def pantheon_tournament_registration(request, tournament_id):
     tournament = get_object_or_404(Tournament, id=tournament_id)
+
+    # offline pantheon tournaments go through tournament_registration instead
+    if not tournament.is_online():
+        return redirect(tournament.get_url())
+
     user = request.user
     form_data = request.POST
     notes = None
@@ -314,6 +381,12 @@ def tournament_registration(request, tournament_id):
         form = TournamentRegistrationForm(request.POST, initial={"tournament": tournament})
 
     if form.is_valid():
+        if tournament.is_pantheon_registration and not tournament.is_online():
+            if not request.user.is_authenticated:
+                return redirect(tournament.get_url())
+            if TournamentRegistration.objects.filter(tournament=tournament, user=request.user).exists():
+                return redirect(tournament.get_url())
+
         if tournament.is_online():
             tenhou_nickname = form.cleaned_data.get("tenhou_nickname")
             exists = OnlineTournamentRegistration.objects.filter(
@@ -334,19 +407,25 @@ def tournament_registration(request, tournament_id):
         except City.DoesNotExist:
             pass
 
-        try:
-            full_name = f"{instance.first_name.title()} {instance.last_name.title()}"
-            if instance.city_object:
-                instance.player = PlayerHelper.find_player_smart(
-                    player_full_name=full_name, city_object=instance.city_object
-                )
-            else:
-                instance.player = PlayerHelper.find_player_smart(player_full_name=full_name)
-            if not instance.player:
-                raise Player.DoesNotExist
-        except (Player.DoesNotExist, Player.MultipleObjectsReturned):
-            # TODO if multiple players are here, let's try to filter by city
-            pass
+        # an admin-approved account link beats guessing by name: Pantheon titles carry
+        # middle names ("Michael Mike Gürtl-Dusleag") that find_player_smart cannot match
+        attached_player = request.user.is_authenticated and request.user.attached_player
+        if attached_player:
+            instance.player = attached_player
+        else:
+            try:
+                full_name = f"{instance.first_name.title()} {instance.last_name.title()}"
+                if instance.city_object:
+                    instance.player = PlayerHelper.find_player_smart(
+                        player_full_name=full_name, city_object=instance.city_object
+                    )
+                else:
+                    instance.player = PlayerHelper.find_player_smart(player_full_name=full_name)
+                if not instance.player:
+                    raise Player.DoesNotExist
+            except (Player.DoesNotExist, Player.MultipleObjectsReturned):
+                # TODO if multiple players are here, let's try to filter by city
+                pass
 
         if tournament.registrations_pre_moderation:
             instance.is_approved = False
@@ -356,6 +435,9 @@ def tournament_registration(request, tournament_id):
         else:
             instance.is_approved = True
             message = _("Your registration was accepted!")
+
+        if request.user.is_authenticated:
+            instance.user = request.user
 
         instance.save()
 

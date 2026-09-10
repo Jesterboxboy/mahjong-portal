@@ -108,10 +108,11 @@ def split_name(player_title):
     if " " not in player_title:
         return player_title, ""
 
-    temp = player_title.split(" ")
+    temp = player_title.split()
 
-    first_name = temp[1].title()
-    last_name = temp[0].title()
+    # western order: surname last, every leading token is a given/middle name
+    last_name = temp[-1].title()
+    first_name = " ".join(part.title() for part in temp[:-1])
     return first_name, last_name
 
 

@@ -3,6 +3,7 @@
 import logging
 
 from django.conf import settings
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from twirp.context import Context
 
@@ -112,7 +113,59 @@ def register_player(adminPersonId, pantheonEventId, pantheonId):
             event_id=int(pantheonEventId), player_id=int(pantheonId)
         ),
         server_path_prefix="/v2",
+        timeout=30,
     )
+
+
+def sync_registration_to_pantheon(registration) -> bool:
+    """Enroll an approved offline+pantheon registrant in the linked Pantheon event.
+
+    Never raises and never rolls back the portal registration; returns True only on a
+    successful push. Failures are logged, stored on the registration and emailed to the
+    organizers so somebody can enroll the player by hand.
+    """
+    tournament = registration.tournament
+
+    if not registration.is_approved:
+        return False
+    if not tournament.is_pantheon_registration or tournament.is_online():
+        return False
+    if not tournament.new_pantheon_id:
+        return False
+    if registration.pantheon_synced_on:
+        return False
+
+    person_id = registration.user and registration.user.new_pantheon_id
+    if not person_id:
+        return _pantheon_sync_failed(registration, "No Pantheon account linked to this registration")
+
+    if not settings.PANTHEON_ADMIN_ID:
+        return _pantheon_sync_failed(registration, "PANTHEON_ADMIN_ID is not configured")
+
+    try:
+        register_player(settings.PANTHEON_ADMIN_ID, tournament.new_pantheon_id, person_id)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Pantheon registration push failed for registration %s", registration.pk)
+        return _pantheon_sync_failed(registration, str(e))
+
+    _store_pantheon_sync_state(registration, pantheon_synced_on=timezone.now(), pantheon_sync_error="")
+    return True
+
+
+def _pantheon_sync_failed(registration, reason) -> bool:
+    from mahjong_portal.notifications import notify_pantheon_sync_failure
+
+    logger.error("Pantheon registration push failed for registration %s: %s", registration.pk, reason)
+    _store_pantheon_sync_state(registration, pantheon_sync_error=reason)
+    notify_pantheon_sync_failure(registration, reason)
+    return False
+
+
+def _store_pantheon_sync_state(registration, **fields):
+    # queryset update, not save(): this runs from inside save() and would recurse
+    type(registration).objects.filter(pk=registration.pk).update(**fields)
+    for name, value in fields.items():
+        setattr(registration, name, value)
 
 
 def add_user_to_new_pantheon(

@@ -58,10 +58,35 @@ def notify_organizers_new_registration(registration):
     _send(subject, body, recipients)
 
 
+def notify_pantheon_sync_failure(registration, reason):
+    """Email organizers and superusers when a registrant could not be pushed to Pantheon."""
+    from account.models import User
+
+    tournament = registration.tournament
+    recipients = tournament.get_organizer_emails()
+    recipients += list(User.objects.filter(is_superuser=True).exclude(email="").values_list("email", flat=True))
+    if not recipients:
+        return
+
+    name = f"{registration.first_name} {registration.last_name}".strip()
+    subject = f"Pantheon registration failed: {tournament.name}"
+    body = (
+        f"{name!r} was approved for {tournament.name!r} but could NOT be added to the "
+        f"linked Pantheon event (id {tournament.new_pantheon_id}).\n\n"
+        f"Reason: {reason}\n\n"
+        f"The portal registration was kept. Please add the player in Pantheon manually, "
+        f"or retry from the admin.\n\n"
+        f"Registration: {_admin_url(registration)}"
+    )
+    _send(subject, body, recipients)
+
+
 def _fill(text, registration):
     # plain placeholder substitution only — no template engine, no SSTI surface
-    return (text or "").replace("{{first_name}}", registration.first_name or "").replace(
-        "{{last_name}}", registration.last_name or ""
+    return (
+        (text or "")
+        .replace("{{first_name}}", registration.first_name or "")
+        .replace("{{last_name}}", registration.last_name or "")
     )
 
 

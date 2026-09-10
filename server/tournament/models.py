@@ -301,7 +301,7 @@ class Tournament(BaseModel):
         return self.id == AGARI_TOURNAMENT_ID
 
     def get_tournament_registrations(self):
-        if self.is_online() or self.is_pantheon_registration:
+        if self.is_online():
             if self.is_majsoul_tournament:
                 return self.ms_online_tournament_registrations.filter(is_approved=True)
             else:
@@ -366,7 +366,11 @@ class RegistrationConfirmationMixin(models.Model):
             from mahjong_portal.notifications import confirmation_email
 
             confirmation_email(self)
+            self.on_became_approved()
         self._original_is_approved = self.is_approved
+
+    def on_became_approved(self):
+        """Hook: fires once when a registration transitions to approved."""
 
     def get_recipient_email(self):
         """Best-effort email for the registrant; None if unavailable."""
@@ -418,10 +422,14 @@ class TournamentRegistration(RegistrationConfirmationMixin, BaseModel):
     player = models.ForeignKey(
         Player, on_delete=models.CASCADE, null=True, blank=True, related_name="tournament_registrations"
     )
+    user = models.ForeignKey("account.User", on_delete=models.CASCADE, null=True, blank=True)
     city_object = models.ForeignKey(City, on_delete=models.CASCADE, null=True, blank=True)
 
     registration_country = models.CharField(max_length=255, verbose_name=_("Country"), null=True)
     allow_to_save_data = models.BooleanField(default=False, verbose_name=_("I allow to store my personal data"))
+
+    pantheon_synced_on = models.DateTimeField(null=True, blank=True)
+    pantheon_sync_error = models.TextField(null=True, blank=True, default="")
 
     def __unicode__(self):
         return self.full_name
@@ -435,6 +443,11 @@ class TournamentRegistration(RegistrationConfirmationMixin, BaseModel):
 
     def get_recipient_email(self):
         return self.email or None
+
+    def on_became_approved(self):
+        from utils.new_pantheon import sync_registration_to_pantheon  # deferred: import cycle
+
+        sync_registration_to_pantheon(self)
 
 
 class OnlineTournamentRegistration(RegistrationConfirmationMixin, BaseModel):
