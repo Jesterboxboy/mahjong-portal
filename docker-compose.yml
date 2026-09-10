@@ -1,70 +1,32 @@
+version: '3'
+
 volumes:
-  postgres_production_data: {}
+  postgres_data: {}
+  media_uploads: {}
 
 services:
   web:
     build:
       context: .
       dockerfile: docker/django/Dockerfile
+    image: mahjong-portal
     env_file:
-      - .envs/.production.env
+      - ./.envs/.local
     depends_on:
       - db
     volumes:
-      - ./server:/app/
-      - ./files/collected_static:/app/collected_static/
-      - ./files/whoosh_index:/app/whoosh_index/
-      - ./files/tmp:/tmp
-      - ./files/shared/:/app/shared/
-      - ./files/media:/app/media
-    restart: always
-    logging:
-      driver: json-file
-      options:
-        max-size: '10m'
-        max-file: '5'
+      - ./server/:/app
+      - ./server/shared/:/app/shared/
+      - media_uploads:/app/media
     ports:
-      - '6101:6101'
-    command: /usr/local/bin/gunicorn mahjong_portal.wsgi --bind=0.0.0.0:6101 --workers=2 --log-level=info --chdir=/app/
-    networks:
-      - shared
-      - default
-
-  cronjobs:
-    build:
-      context: .
-      dockerfile: docker/django/Dockerfile
-    depends_on:
-      - db
-    env_file:
-      - .envs/.production.env
-    volumes:
-      - ./files/whoosh_index:/app/whoosh_index/
-      - ./files/tmp:/tmp
-      - ./files/media:/app/media
-    restart: always
-    logging:
-      driver: json-file
-      options:
-        max-size: '10m'
-        max-file: '5'
-    user: root
-    command: ['crond', '-f']
+      - '8060:8060'
+    command: python manage.py runserver 0.0.0.0:8060
 
   db:
     image: postgres:15.3-alpine3.18
-    env_file:
-      - .envs/.production.env
-    restart: always
-    logging:
-      driver: json-file
-      options:
-        max-size: '10m'
-        max-file: '5'
     volumes:
-      - postgres_production_data:/var/lib/postgresql/data
-
-networks:
-  shared:
-    name: pantheon-connect
-    external: true
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./.envs/.local
+#    ports:
+#      - '5462:5432'

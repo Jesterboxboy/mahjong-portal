@@ -183,8 +183,7 @@ def scrape_player_results(ema_id: str, start_date, end_date) -> list[dict]:
         # For players who only have Riichi results the first HallFame table is used.
         # This approach is robust against navigation headings also named "Riichi".
         hallFame_tables = [
-            t for t in soup.find_all("table")
-            if t.find("td", class_=lambda c: c and c.startswith("HallFame_"))
+            t for t in soup.find_all("table") if t.find("td", class_=lambda c: c and c.startswith("HallFame_"))
         ]
 
         results_table = None

@@ -31,8 +31,8 @@ def notify_superusers_attach_request(attach_request):
 
     subject = "New player attach request"
     body = (
-        f"User '{attach_request.user}' requested to be attached to player "
-        f"'{attach_request.player}'.\n\n"
+        f"User {attach_request.user!r} requested to be attached to player "
+        f"{attach_request.player!r}.\n\n"
         f"Contacts provided:\n{attach_request.contacts}\n\n"
         f"Review: {_admin_url(attach_request)}"
     )
@@ -49,7 +49,7 @@ def notify_organizers_new_registration(registration):
     contact = getattr(registration, "contact", None) or getattr(registration, "email", "") or ""
     subject = f"New registration: {registration.tournament.name}"
     body = (
-        f"A new registration was submitted for '{registration.tournament.name}'.\n\n"
+        f"A new registration was submitted for {registration.tournament.name!r}.\n\n"
         f"Name: {name}\n"
         f"City: {registration.city}\n"
         f"Contact: {contact}\n"

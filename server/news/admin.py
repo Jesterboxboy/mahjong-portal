@@ -15,12 +15,8 @@ class NewsArticleAdmin(admin.ModelAdmin):
     date_hierarchy = "published_date"
     ordering = ["-published_date"]
     fieldsets = (
-        (None, {
-            "fields": ("title", "slug", "category", "published_date", "is_published")
-        }),
-        ("Content", {
-            "fields": ("excerpt", "body", "image")
-        }),
+        (None, {"fields": ("title", "slug", "category", "published_date", "is_published")}),
+        ("Content", {"fields": ("excerpt", "body", "image")}),
     )
 
     def get_form(self, request, obj=None, **kwargs):

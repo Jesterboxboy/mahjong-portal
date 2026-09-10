@@ -154,7 +154,8 @@ class Tournament(BaseModel):
         related_name="organized_tournaments",
         verbose_name=_("Non-playing organizers"),
         help_text=_(
-            "Players who organize this tournament but do not compete. Each receives a share of their average AT points for this quota period."
+            "Players who organize this tournament but do not compete. "
+            "Each receives a share of their average AT points for this quota period."
         ),
     )
 

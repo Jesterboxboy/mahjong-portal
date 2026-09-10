@@ -99,7 +99,7 @@ def load_pantheon_results(modeladmin, request, queryset):
     if not tournament.new_pantheon_id:
         modeladmin.message_user(
             request,
-            f"Tournament '{tournament.name}' has no New Pantheon ID set. Cannot load results.",
+            f"Tournament {tournament.name!r} has no New Pantheon ID set. Cannot load results.",
             level=messages.ERROR,
         )
         return
