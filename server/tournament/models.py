@@ -123,6 +123,7 @@ class Tournament(BaseModel):
     new_pantheon_id = models.CharField(max_length=20, null=True, blank=True)
     ema_id = models.CharField(max_length=20, null=True, blank=True)
 
+    general_information = models.TextField(null=True, blank=True, verbose_name=_("General information"))
     venue_address = models.TextField(null=True, blank=True, verbose_name=_("Venue & address"))
     schedule = models.TextField(null=True, blank=True, verbose_name=_("Schedule / Itinerary"))
     lunch_options = models.TextField(null=True, blank=True, verbose_name=_("Lunch options"))
@@ -586,6 +587,8 @@ class TournamentApplication(BaseModel):
         null=True, blank=True, verbose_name=_("Link to additional tournament information")
     )
 
+    general_information_de = models.TextField(null=True, blank=True, verbose_name=_("General information (DE)"))
+    general_information_en = models.TextField(null=True, blank=True, verbose_name=_("General information (EN)"))
     venue_address_de = models.TextField(null=True, blank=True, verbose_name=_("Venue & address (DE)"))
     venue_address_en = models.TextField(null=True, blank=True, verbose_name=_("Venue & address (EN)"))
     schedule_de = models.TextField(null=True, blank=True, verbose_name=_("Schedule / Itinerary (DE)"))

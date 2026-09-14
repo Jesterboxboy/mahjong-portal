@@ -9,6 +9,7 @@ class TournamentTranslationOptions(TranslationOptions):
     fields = [
         "registration_description",
         "results_description",
+        "general_information",
         "venue_address",
         "schedule",
         "lunch_options",

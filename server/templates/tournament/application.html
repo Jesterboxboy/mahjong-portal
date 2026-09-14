@@ -78,12 +78,14 @@
                     </ul>
                     <div class="tab-content" id="infoLangTabsContent">
                         <div class="tab-pane fade show active" id="info-de" role="tabpanel">
+                            {% bootstrap_field form.general_information_de %}
                             {% bootstrap_field form.venue_address_de %}
                             {% bootstrap_field form.schedule_de %}
                             {% bootstrap_field form.lunch_options_de %}
                             {% bootstrap_field form.contact_info_de %}
                         </div>
                         <div class="tab-pane fade" id="info-en" role="tabpanel">
+                            {% bootstrap_field form.general_information_en %}
                             {% bootstrap_field form.venue_address_en %}
                             {% bootstrap_field form.schedule_en %}
                             {% bootstrap_field form.lunch_options_en %}

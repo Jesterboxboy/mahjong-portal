@@ -175,6 +175,7 @@ class TournamentForm(forms.ModelForm):
         model = Tournament
         exclude = ["registration_description", "results_description"]
         widgets = {
+            "general_information": TinyMCE(),
             "venue_address": TinyMCE(),
             "schedule": TinyMCE(),
             "lunch_options": TinyMCE(),
@@ -237,7 +238,16 @@ class TournamentAdmin(TranslationAdmin):
         ),
         (
             "Tournament Info Tab",
-            {"fields": ["venue_address", "schedule", "lunch_options", "contact_info", "organizer_emails"]},
+            {
+                "fields": [
+                    "general_information",
+                    "venue_address",
+                    "schedule",
+                    "lunch_options",
+                    "contact_info",
+                    "organizer_emails",
+                ]
+            },
         ),
         ("GDPR", {"fields": ["gdpr_document", "gdpr_file"]}),
     ]
@@ -389,6 +399,8 @@ def create_tournament_from_application(modeladmin, request, queryset):
         end_date=end_date,
         start_date=start_date,
         is_upcoming=True,
+        general_information_de=app.general_information_de or None,
+        general_information_en=app.general_information_en or None,
         # Venue: use detailed field if set, fall back to legacy address
         venue_address_de=app.venue_address_de or app.address or None,
         venue_address_en=app.venue_address_en or None,

@@ -2540,3 +2540,41 @@ msgstr "Quota-Event"
 
 msgid "Fee for %(year)s not payed"
 msgstr "Mitgliedsbeitrag für %(year)s nicht bezahlt"
+
+#: templates/tournament/announcement.html:54
+msgid "Tournament Info"
+msgstr "Turnierinformationen"
+
+#: templates/tournament/announcement.html:287
+msgid "Venue & Address"
+msgstr "Veranstaltungsort & Adresse"
+
+#: templates/tournament/announcement.html:301
+msgid "Schedule / Itinerary"
+msgstr "Zeitplan / Ablauf"
+
+#: templates/tournament/announcement.html:315
+msgid "Lunch Options"
+msgstr "Verpflegung"
+
+#: templates/tournament/announcement.html:329
+msgid "Contact"
+msgstr "Kontakt"
+
+#: templates/tournament/announcement.html:103
+#: templates/tournament/announcement.html:137
+#: templates/tournament/announcement.html:165
+msgid "View GDPR / data protection document (PDF)"
+msgstr "DSGVO-/Datenschutzdokument anzeigen (PDF)"
+
+#: templates/tournament/announcement.html:286 tournament/models.py:126
+msgid "General information"
+msgstr "Allgemeine Informationen"
+
+#: tournament/models.py:591
+msgid "General information (DE)"
+msgstr "Allgemeine Informationen (DE)"
+
+#: tournament/models.py:592
+msgid "General information (EN)"
+msgstr "Allgemeine Informationen (EN)"
