@@ -2578,3 +2578,7 @@ msgstr "Allgemeine Informationen (DE)"
 #: tournament/models.py:592
 msgid "General information (EN)"
 msgstr "Allgemeine Informationen (EN)"
+
+#: templates/tournament/announcement.html:185
+msgid "Registration is not open"
+msgstr "Die Anmeldung ist nicht geöffnet"
