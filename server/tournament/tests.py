@@ -101,3 +101,47 @@ class OfflinePantheonRegistrationTest(TestCase):
             registration.is_approved = True
             registration.save()
             register.assert_not_called()
+
+
+class EntryFeeTest(TestCase):
+    def setUp(self):
+        country = Country.objects.create(code="AT", name="Austria")
+        self.paid_cup = self._tournament("paid-cup", country, entry_fee=True)
+        self.free_cup = self._tournament("free-cup", country, entry_fee=False)
+
+    @staticmethod
+    def _tournament(slug, country, **kwargs):
+        return Tournament.objects.create(
+            name=slug, slug=slug, end_date=datetime.date(2026, 1, 1), country=country, is_upcoming=True, **kwargs
+        )
+
+    @staticmethod
+    def _registration(tournament, **kwargs):
+        return TournamentRegistration.objects.create(
+            tournament=tournament, first_name="Hans", last_name="Müller", city="Wien", email="h@example.com", **kwargs
+        )
+
+    def test_action_marks_only_entry_fee_tournaments(self):
+        from unittest.mock import MagicMock
+
+        from tournament.admin import mark_as_paid
+
+        paid = self._registration(self.paid_cup)
+        free = self._registration(self.free_cup)
+
+        mark_as_paid(MagicMock(), None, TournamentRegistration.objects.all())
+
+        paid.refresh_from_db()
+        free.refresh_from_db()
+        self.assertTrue(paid.has_paid)
+        self.assertFalse(free.has_paid)
+
+    def test_paid_column_only_with_entry_fee(self):
+        self._registration(self.paid_cup, has_paid=True)
+        self._registration(self.free_cup, has_paid=True)
+
+        with_fee = self.client.get(self.paid_cup.get_url()).content.decode()
+        without_fee = self.client.get(self.free_cup.get_url()).content.decode()
+
+        self.assertIn('class="text-success"', with_fee)
+        self.assertNotIn('class="text-success"', without_fee)

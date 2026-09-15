@@ -32,3 +32,4 @@ etc
 
 files/
 IMPLEMENTATION.md
+.envs/.local

@@ -46,7 +46,24 @@ DATABASE_URL=postgresql://portal:<strong-password>@db:5432/mahjong_portal
 PANTHEON_AUTH_API_URL=https://frey.yourdomain.example.com
 PANTHEON_NEW_API_URL=https://mimir.yourdomain.example.com
 PANTHEON_FRONTEND_URL=https://sigrun.yourdomain.example.com
+
+# Admin account used to add approved registrants to Pantheon events (see section 9)
+PANTHEON_ADMIN_ID=<pantheon-person-id>
+PANTHEON_ADMIN_COOKIE=<pantheon-auth-token>
+
+# Outgoing mail (see section 8)
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=true
+EMAIL_USE_SSL=false
+EMAIL_HOST_USER=portal@yourdomain.example.com
+EMAIL_HOST_PASSWORD=<smtp-password>
+DEFAULT_FROM_EMAIL=portal@yourdomain.example.com
 ```
+
+> After changing `.envs/.production.env` on a running stack, recreate the containers —
+> `restart` does not reload env files:
+> `docker compose up -d --force-recreate web cronjobs`
 
 > Generate a SECRET_KEY with:
 > `python3 -c "import secrets; print(secrets.token_urlsafe(60))"`
@@ -224,6 +241,105 @@ make update
 ```
 
 This pulls the latest image, runs `collectstatic` + `migrate`, and restarts the stack.
+
+---
+
+## 8. Email
+
+The portal sends mail for registration confirmations, organizer notices and Pantheon sync failures.
+All mail goes through SMTP using the `EMAIL_*` variables from section 1.
+
+| Variable | Notes |
+|----------|-------|
+| `EMAIL_HOST` | Required. If unset, Django tries `localhost` and every send fails |
+| `EMAIL_PORT` | Default `587` |
+| `EMAIL_USE_TLS` / `EMAIL_USE_SSL` | `587` → TLS=true, SSL=false · `465` → TLS=false, SSL=true. Never both true |
+| `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | SMTP login |
+| `DEFAULT_FROM_EMAIL` | Sender address; defaults to `EMAIL_HOST_USER`. Must be allowed by your provider |
+
+Test it:
+
+```bash
+docker compose exec web python manage.py sendtestemail you@example.com
+```
+
+Every send attempt is recorded in **Admin → Sent emails** (`/admin/mahjong_portal/sentemail/`),
+with `success` and the SMTP `error` if one occurred.
+
+### Troubleshooting: a registrant got no confirmation email
+
+1. **Admin → Sent emails** — is there a row for the recipient?
+   - `success = False` → SMTP problem; read the `error` column, check the `EMAIL_*` values.
+   - `success = True` → the SMTP server accepted it; check spam and your provider's logs.
+   - **No row** → the send was skipped before SMTP. Continue with step 2.
+2. Inspect the registration (replace `<ID>`):
+
+   ```bash
+   docker compose exec web python manage.py shell -c "
+   from tournament.models import TournamentRegistration as R, TournamentEmailTemplate as T
+   r = R.objects.get(pk=<ID>)
+   print('approved:', r.is_approved)
+   print('recipient used:', r.get_recipient_email())
+   print('confirmation template:', r.tournament.email_templates.filter(email_type=T.CONFIRMATION).exists())
+   "
+   ```
+
+   - `confirmation template: False` → add a *Confirmation* email template to the tournament in the admin.
+   - `recipient used: None` → no email could be determined for the registrant.
+   - The email is sent only when a registration **becomes** approved (created approved, or switched
+     from unapproved to approved). Re-saving an already approved row sends nothing — untick, save,
+     tick, save to re-trigger.
+3. Application log:
+
+   ```bash
+   docker compose logs web --since 1h | grep -i "Failed to send notification\|smtp"
+   ```
+
+---
+
+## 9. Pantheon admin credentials
+
+When a registration for an offline tournament with *Is pantheon registration* is approved, the portal
+adds the player to the linked Pantheon event. It authenticates as a Pantheon admin using:
+
+| Variable | Sent as header | What it is |
+|----------|----------------|------------|
+| `PANTHEON_ADMIN_ID` | `X-Current-Person-Id` | Pantheon person id of the admin account |
+| `PANTHEON_ADMIN_COOKIE` | `X-Auth-Token` | Auth token of that account |
+
+The account must be allowed to add players to the event (event admin or Pantheon superadmin).
+
+### Obtaining the values
+
+Log in through the portal's own Pantheon client — no browser cookie extraction needed:
+
+```bash
+cd /srv/docker-compose/mahjong-portal
+docker compose exec -it web python manage.py shell -c "
+from getpass import getpass
+from pantheon_api.api_calls.user import login_through_pantheon, get_current_pantheon_user_data
+r = login_through_pantheon(input('Pantheon email: '), getpass('Password: '))
+print('PANTHEON_ADMIN_ID=%s' % r.person_id)
+print('PANTHEON_ADMIN_COOKIE=%s' % r.auth_token)
+print('check:', get_current_pantheon_user_data(r.person_id, r.auth_token)['title'])
+"
+```
+
+The `check:` line should print the account's name. Copy both values into `.envs/.production.env`, then:
+
+```bash
+docker compose up -d --force-recreate web cronjobs
+docker compose exec web sh -c 'echo $PANTHEON_ADMIN_ID; echo ${PANTHEON_ADMIN_COOKIE:+token set}'
+```
+
+> The token grants full access as that account — keep it out of git, chat and screenshots.
+> If pushes start failing with an auth error (e.g. after a password change), repeat the steps above.
+
+### When a push fails
+
+The portal registration is always kept. The error is stored on the registration
+(`pantheon_sync_error`) and organizers + superusers are emailed. After fixing the cause, select the
+affected rows in **Admin → Tournament registrations** and run **Retry Pantheon event registration**.
 
 ---
 

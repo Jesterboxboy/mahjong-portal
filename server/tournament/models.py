@@ -109,6 +109,11 @@ class Tournament(BaseModel):
     fill_city_in_registration = models.BooleanField(default=False)
     opened_registration = models.BooleanField(default=False)
     registrations_pre_moderation = models.BooleanField(default=False)
+    entry_fee = models.BooleanField(
+        default=False,
+        verbose_name=_("Entry fee"),
+        help_text=_("Track which registrants have paid the entry fee"),
+    )
     is_apply_in_rating = models.BooleanField(default=False)
     is_command = models.BooleanField(default=False, verbose_name="Is team tournament")
     is_pre_registration = models.BooleanField(default=False)
@@ -386,6 +391,7 @@ class RegistrationConfirmationMixin(models.Model):
 class TournamentRegistration(RegistrationConfirmationMixin, BaseModel):
     tournament = models.ForeignKey(Tournament, related_name="tournament_registrations", on_delete=models.PROTECT)
     is_approved = models.BooleanField(default=True)
+    has_paid = models.BooleanField(default=False, verbose_name=_("Paid"))
 
     first_name = models.CharField(max_length=255, verbose_name=_("First name"))
     last_name = models.CharField(max_length=255, verbose_name=_("Last name"))

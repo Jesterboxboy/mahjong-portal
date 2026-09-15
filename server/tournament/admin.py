@@ -75,6 +75,21 @@ def retry_pantheon_registration(modeladmin, request, queryset):
 retry_pantheon_registration.short_description = "Retry Pantheon event registration"
 
 
+def mark_as_paid(modeladmin, request, queryset):
+    """Mark the selected registrations as having paid; only for tournaments with an entry fee."""
+    eligible = queryset.filter(tournament__entry_fee=True)
+    updated = eligible.update(has_paid=True)
+    skipped = queryset.count() - eligible.count()
+    modeladmin.message_user(
+        request,
+        f"Marked {updated} registration(s) as paid. Skipped {skipped} without an entry fee tournament.",
+        level=messages.SUCCESS if not skipped else messages.WARNING,
+    )
+
+
+mark_as_paid.short_description = "Player has paid (entry fee)"
+
+
 class TournamentEmailTemplateInline(admin.StackedInline):
     model = TournamentEmailTemplate
     extra = 0
@@ -221,6 +236,7 @@ class TournamentAdmin(TranslationAdmin):
                     "fill_city_in_registration",
                     "opened_registration",
                     "registrations_pre_moderation",
+                    "entry_fee",
                     "is_apply_in_rating",
                     "is_command",
                     "is_pre_registration",
@@ -264,6 +280,7 @@ class TournamentRegistrationAdmin(admin.ModelAdmin):
     list_display = [
         "id",
         "is_approved",
+        "has_paid",
         "tournament",
         "first_name",
         "last_name",
@@ -281,9 +298,16 @@ class TournamentRegistrationAdmin(admin.ModelAdmin):
     ]
 
     raw_id_fields = ["tournament", "player", "city_object", "user"]
-    list_filter = [["tournament", admin.RelatedOnlyFieldListFilter], "created_on"]
+    list_filter = [["tournament", admin.RelatedOnlyFieldListFilter], "has_paid", "created_on"]
     readonly_fields = ["created_on"]
-    actions = [approve_and_send_confirmation, retry_pantheon_registration]
+    actions = [approve_and_send_confirmation, retry_pantheon_registration, mark_as_paid]
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        # ponytail: hidden only when no tournament at all has an entry fee; the action itself skips the rest.
+        if "mark_as_paid" in actions and not Tournament.objects.filter(entry_fee=True).exists():
+            del actions["mark_as_paid"]
+        return actions
 
 
 class OnlineTournamentRegistrationAdmin(admin.ModelAdmin):
