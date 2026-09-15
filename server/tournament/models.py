@@ -114,6 +114,11 @@ class Tournament(BaseModel):
         verbose_name=_("Entry fee"),
         help_text=_("Track which registrants have paid the entry fee"),
     )
+    show_online_rank = models.BooleanField(
+        default=False,
+        verbose_name=_("Show online rank"),
+        help_text=_("Show the players' Dan rank in the participants table of the announcement"),
+    )
     is_apply_in_rating = models.BooleanField(default=False)
     is_command = models.BooleanField(default=False, verbose_name="Is team tournament")
     is_pre_registration = models.BooleanField(default=False)

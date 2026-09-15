@@ -2590,3 +2590,11 @@ msgstr "Erfassen, welche Teilnehmer die Startgebühr bezahlt haben"
 #: templates/tournament/announcement.html tournament/models.py
 msgid "Paid"
 msgstr "Bezahlt"
+
+#: tournament/models.py:119
+msgid "Show online rank"
+msgstr "Online-Rang anzeigen"
+
+#: tournament/models.py:120
+msgid "Show the players' Dan rank in the participants table of the announcement"
+msgstr "Dan-Rang der Spieler in der Teilnehmertabelle der Ankündigung anzeigen"

@@ -145,3 +145,11 @@ class EntryFeeTest(TestCase):
 
         self.assertIn('class="text-success"', with_fee)
         self.assertNotIn('class="text-success"', without_fee)
+
+    def test_dan_column_only_with_show_online_rank(self):
+        self._registration(self.paid_cup)
+        self.assertNotIn('<th scope="col">Dan</th>', self.client.get(self.paid_cup.get_url()).content.decode())
+
+        self.paid_cup.show_online_rank = True
+        self.paid_cup.save()
+        self.assertIn('<th scope="col">Dan</th>', self.client.get(self.paid_cup.get_url()).content.decode())

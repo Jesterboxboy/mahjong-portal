@@ -237,6 +237,7 @@ class TournamentAdmin(TranslationAdmin):
                     "opened_registration",
                     "registrations_pre_moderation",
                     "entry_fee",
+                    "show_online_rank",
                     "is_apply_in_rating",
                     "is_command",
                     "is_pre_registration",

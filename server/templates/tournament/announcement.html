@@ -207,7 +207,7 @@
                                                 <th scope="col">{% trans 'Tenhou.net nickname' %}</th>
                                             {% endif %}
                                         {% endif %}
-                                        {% if not tournament.is_majsoul_tournament %}
+                                        {% if tournament.show_online_rank and not tournament.is_majsoul_tournament %}
                                             <th scope="col">{% trans 'Dan' %}</th>
                                         {% endif %}
                                         {% if tournament.display_notes and tournament.share_notes and tournament.is_command %}
@@ -264,7 +264,7 @@
                                                     <td>{{ registration_item.tenhou_nickname|get_safe_str }}</td>
                                                 {% endif %}
                                             {% endif %}
-                                            {% if not tournament.is_majsoul_tournament %}
+                                            {% if tournament.show_online_rank and not tournament.is_majsoul_tournament %}
                                                 <td>
                                                     {% with registration_item.player as player %}
                                                         {% include 'player/_online_account.html' %}
