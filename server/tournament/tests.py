@@ -244,6 +244,15 @@ class PendingRegistrationsCountTest(TestCase):
 
         self.assertEqual(self.tournament.pending_registrations_count(), 0)
 
+    def test_registered_players_count_excludes_pending(self):
+        self.tournament.opened_registration = True
+        self.tournament.save()
+        self._registration(is_approved=True)
+        self._registration(is_approved=False)
+        url = self.tournament.get_url().replace("/de/", "/en/", 1)
+
+        self.assertIn("Registered players 1", self.client.get(url).content.decode())
+
     def test_alert_shown_only_with_pre_moderation(self):
         self._registration(is_approved=False)
         url = self.tournament.get_url().replace("/de/", "/en/", 1)
