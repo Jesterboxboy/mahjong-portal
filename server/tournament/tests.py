@@ -153,3 +153,50 @@ class EntryFeeTest(TestCase):
         self.paid_cup.show_online_rank = True
         self.paid_cup.save()
         self.assertIn('<th scope="col">Dan</th>', self.client.get(self.paid_cup.get_url()).content.decode())
+
+
+class PendingRegistrationsCountTest(TestCase):
+    def setUp(self):
+        country = Country.objects.create(code="AT", name="Austria")
+        self.tournament = Tournament.objects.create(
+            name="moderated-cup",
+            slug="moderated-cup",
+            end_date=datetime.date(2026, 1, 1),
+            country=country,
+            is_upcoming=True,
+            registrations_pre_moderation=True,
+        )
+
+    def _registration(self, **kwargs):
+        return TournamentRegistration.objects.create(
+            tournament=self.tournament,
+            first_name="Hans",
+            last_name="Müller",
+            city="Wien",
+            email="h@example.com",
+            **kwargs,
+        )
+
+    def test_counts_only_unapproved(self):
+        self._registration(is_approved=False)
+        self._registration(is_approved=False)
+        self._registration(is_approved=True)
+
+        self.assertEqual(self.tournament.pending_registrations_count(), 2)
+
+    def test_zero_without_pre_moderation(self):
+        self._registration(is_approved=False)
+        self.tournament.registrations_pre_moderation = False
+        self.tournament.save()
+
+        self.assertEqual(self.tournament.pending_registrations_count(), 0)
+
+    def test_alert_shown_only_with_pre_moderation(self):
+        self._registration(is_approved=False)
+        url = self.tournament.get_url().replace("/de/", "/en/", 1)
+
+        self.assertIn("Registrations waiting for approval: 1", self.client.get(url).content.decode())
+
+        self.tournament.registrations_pre_moderation = False
+        self.tournament.save()
+        self.assertNotIn("Registrations waiting for approval", self.client.get(url).content.decode())

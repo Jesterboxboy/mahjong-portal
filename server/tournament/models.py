@@ -321,6 +321,17 @@ class Tournament(BaseModel):
         else:
             return self.tournament_registrations.filter(is_approved=True)
 
+    def pending_registrations_count(self):
+        if not self.registrations_pre_moderation:
+            return 0
+
+        if self.is_online():
+            if self.is_majsoul_tournament:
+                return self.ms_online_tournament_registrations.filter(is_approved=False).count()
+            return self.online_tournament_registrations.filter(is_approved=False).count()
+
+        return self.tournament_registrations.filter(is_approved=False).count()
+
     def championship_tournament_results(self):
         return TournamentResult.objects.filter(tournament=self).order_by("place")[:8]
 

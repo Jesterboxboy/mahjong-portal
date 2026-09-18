@@ -181,6 +181,14 @@
                     <p><a href="{{ tournament.registration_link }}" target="_blank">{{ tournament.registration_link }}</a></p>
                 {% endif %}
 
+                {% if tournament.registrations_pre_moderation %}
+                    {% with pending_count=tournament.pending_registrations_count %}
+                        {% if pending_count %}
+                            <p class="alert alert-info">{% blocktrans %}Registrations waiting for approval: {{ pending_count }}{% endblocktrans %}</p>
+                        {% endif %}
+                    {% endwith %}
+                {% endif %}
+
                 {% if not tournament.opened_registration and not is_already_registered %}
                     {% if tournament.is_pantheon_registration or not tournament.registration_link %}
                         <p class="alert alert-info">{% trans 'Registration is not open' %}</p>

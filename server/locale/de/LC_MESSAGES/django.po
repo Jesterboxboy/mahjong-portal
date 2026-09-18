@@ -2579,7 +2579,12 @@ msgstr "Allgemeine Informationen (DE)"
 msgid "General information (EN)"
 msgstr "Allgemeine Informationen (EN)"
 
-#: templates/tournament/announcement.html:185
+#: templates/tournament/announcement.html:187
+#, python-format
+msgid "Registrations waiting for approval: %(pending_count)s"
+msgstr "Anmeldungen, die auf Freigabe warten: %(pending_count)s"
+
+#: templates/tournament/announcement.html:194
 msgid "Registration is not open"
 msgstr "Die Anmeldung ist nicht geöffnet"
 
