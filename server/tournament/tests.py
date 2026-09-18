@@ -3,6 +3,7 @@
 import datetime
 from unittest.mock import patch
 
+from django.core import mail
 from django.test import TestCase, override_settings
 
 from account.models import User
@@ -79,6 +80,58 @@ class OfflinePantheonRegistrationTest(TestCase):
         self.assertTrue(registration.is_approved)
         self.assertIsNone(registration.pantheon_synced_on)
         self.assertIn("pantheon is down", registration.pantheon_sync_error)
+
+    def _confirmation_template(self):
+        from tournament.models import TournamentEmailTemplate
+
+        self.tournament.organizer_emails = "organizer@example.com"
+        self.tournament.save()
+        return TournamentEmailTemplate.objects.create(
+            tournament=self.tournament,
+            email_type=TournamentEmailTemplate.CONFIRMATION,
+            subject="Welcome {{first_name}}",
+            body="You are registered.",
+        )
+
+    def _recipients(self):
+        return [address for message in mail.outbox for address in message.to]
+
+    def test_failed_push_emails_only_the_admins(self):
+        self._confirmation_template()
+        registration = self._registration()
+
+        with patch("utils.new_pantheon.register_player", side_effect=RuntimeError("pantheon is down")):
+            registration.is_approved = True
+            registration.save()
+
+        self.assertEqual(self._recipients(), ["organizer@example.com"])
+
+    def test_successful_push_emails_the_registrant(self):
+        self._confirmation_template()
+        registration = self._registration()
+
+        with patch("utils.new_pantheon.register_player"):
+            registration.is_approved = True
+            registration.save()
+
+        self.assertIn(registration.email, self._recipients())
+
+    def test_retry_action_sends_the_withheld_confirmation(self):
+        from unittest.mock import MagicMock
+
+        from tournament.admin import retry_pantheon_registration
+
+        self._confirmation_template()
+        registration = self._registration()
+        with patch("utils.new_pantheon.register_player", side_effect=RuntimeError("pantheon is down")):
+            registration.is_approved = True
+            registration.save()
+        mail.outbox = []
+
+        with patch("utils.new_pantheon.register_player"):
+            retry_pantheon_registration(MagicMock(), None, TournamentRegistration.objects.all())
+
+        self.assertIn(registration.email, self._recipients())
 
     def test_attached_player_wins_over_name_matching(self):
         """A Pantheon title with a middle name defeats find_player_smart; the account link must win."""
