@@ -32,6 +32,7 @@ from online.models import (
 )
 from online.parser import TenhouParser
 from online.team_seating import TeamSeating
+from settings.models import pantheon_admin_id
 from tournament.models import MsOnlineTournamentRegistration, OnlineTournamentRegistration
 from utils.general import format_text
 from utils.new_pantheon import (
@@ -295,7 +296,7 @@ class TournamentHandler:
                 team_names.append({"player_id": registration.pantheon_id, "team_name": registration.team_name})
 
             pantheon_response = send_team_names_to_pantheon(
-                self.tournament.new_pantheon_id, settings.PANTHEON_ADMIN_ID, team_names
+                self.tournament.new_pantheon_id, pantheon_admin_id(), team_names
             )
 
             if not pantheon_response.success:
@@ -748,7 +749,7 @@ class TournamentHandler:
                         record,
                         registration,
                         self.tournament.new_pantheon_id,
-                        settings.PANTHEON_ADMIN_ID,
+                        pantheon_admin_id(),
                         self.tournament.is_majsoul_tournament,
                     )
                     if not result[1]:
@@ -771,9 +772,7 @@ class TournamentHandler:
                 return _("Game does not exist.")
 
             player_ids = [x.player.pantheon_id for x in game.game_players.all()]
-            pantheon_response = add_penalty_game(
-                self.tournament.new_pantheon_id, settings.PANTHEON_ADMIN_ID, player_ids
-            )
+            pantheon_response = add_penalty_game(self.tournament.new_pantheon_id, pantheon_admin_id(), player_ids)
             if not pantheon_response.hash:
                 return _("Error adding penalty to pantheon.")
 
@@ -905,9 +904,7 @@ class TournamentHandler:
                 return []
         else:
             make_failback_sortition = False
-            pantheon_sortition = get_new_pantheon_swiss_sortition(
-                self.tournament.new_pantheon_id, settings.PANTHEON_ADMIN_ID
-            )
+            pantheon_sortition = get_new_pantheon_swiss_sortition(self.tournament.new_pantheon_id, pantheon_admin_id())
             pantheon_sortition = json.loads(MessageToJson(pantheon_sortition))
             tables = pantheon_sortition["tables"]
             pantheon_sortition = []

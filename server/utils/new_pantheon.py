@@ -13,6 +13,7 @@ import pantheon_api.mimir_pb2
 from online.models import TournamentPlayers
 from pantheon_api.frey_twirp import FreyClient
 from pantheon_api.mimir_twirp import MimirClient
+from settings.models import pantheon_admin_id, pantheon_admin_token
 
 logger = logging.getLogger()
 
@@ -22,7 +23,7 @@ def get_new_pantheon_swiss_sortition(pantheonEventId, adminPersonId):
 
     context = Context()
     # todo pass pantheon event's owner token
-    context.set_header("X-Auth-Token", settings.PANTHEON_ADMIN_COOKIE)
+    context.set_header("X-Auth-Token", pantheon_admin_token())
     context.set_header("X-Current-Event-Id", str(pantheonEventId))
     context.set_header("X-Current-Person-Id", str(adminPersonId))
 
@@ -62,7 +63,7 @@ def update_personal_info(person_info, adminPersonId, pantheonEventId, isMajsoulT
     client = FreyClient(settings.PANTHEON_AUTH_API_URL)
     context = Context()
     # todo pass pantheon event's owner token
-    context.set_header("X-Auth-Token", settings.PANTHEON_ADMIN_COOKIE)
+    context.set_header("X-Auth-Token", pantheon_admin_token())
     context.set_header("X-Current-Event-Id", str(pantheonEventId))
     context.set_header("X-Current-Person-Id", str(adminPersonId))
 
@@ -103,7 +104,7 @@ def register_player(adminPersonId, pantheonEventId, pantheonId):
 
     context = Context()
     # todo pass pantheon event's owner token
-    context.set_header("X-Auth-Token", settings.PANTHEON_ADMIN_COOKIE)
+    context.set_header("X-Auth-Token", pantheon_admin_token())
     context.set_header("X-Current-Event-Id", str(pantheonEventId))
     context.set_header("X-Current-Person-Id", str(adminPersonId))
 
@@ -139,11 +140,11 @@ def sync_registration_to_pantheon(registration) -> bool:
     if not person_id:
         return _pantheon_sync_failed(registration, "No Pantheon account linked to this registration")
 
-    if not settings.PANTHEON_ADMIN_ID:
-        return _pantheon_sync_failed(registration, "PANTHEON_ADMIN_ID is not configured")
+    if not pantheon_admin_id():
+        return _pantheon_sync_failed(registration, "Frey connector / PANTHEON_ADMIN_ID is not configured")
 
     try:
-        register_player(settings.PANTHEON_ADMIN_ID, tournament.new_pantheon_id, person_id)
+        register_player(pantheon_admin_id(), tournament.new_pantheon_id, person_id)
     except Exception as e:  # noqa: BLE001
         logger.exception("Pantheon registration push failed for registration %s", registration.pk)
         return _pantheon_sync_failed(registration, str(e))
@@ -232,7 +233,7 @@ def add_penalty_game(pantheonEventId, adminPersonId, playerIds):
 
     context = Context()
     # todo pass pantheon event's owner token
-    context.set_header("X-Auth-Token", settings.PANTHEON_ADMIN_COOKIE)
+    context.set_header("X-Auth-Token", pantheon_admin_token())
     context.set_header("X-Current-Event-Id", str(pantheonEventId))
     context.set_header("X-Current-Person-Id", str(adminPersonId))
 
@@ -248,7 +249,7 @@ def send_team_names_to_pantheon(pantheonEventId, adminPersonId, teamMapping):
 
     context = Context()
     # todo pass pantheon event's owner token
-    context.set_header("X-Auth-Token", settings.PANTHEON_ADMIN_COOKIE)
+    context.set_header("X-Auth-Token", pantheon_admin_token())
     context.set_header("X-Current-Event-Id", str(pantheonEventId))
     context.set_header("X-Current-Person-Id", str(adminPersonId))
 

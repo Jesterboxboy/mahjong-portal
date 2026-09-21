@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from league.models import League, LeaguePlayer
+from settings.models import pantheon_admin_id, pantheon_admin_token
 from utils.general import make_random_letters_and_digit_string
 
 
@@ -37,11 +38,11 @@ class Command(BaseCommand):
         )
 
     def send_request_to_pantheon(self, method, params):
-        cookies = {"pantheon_authToken": settings.PANTHEON_ADMIN_COOKIE}
+        cookies = {"pantheon_authToken": pantheon_admin_token()}
         headers = {
-            "X-Auth-Token": settings.PANTHEON_ADMIN_COOKIE,
+            "X-Auth-Token": pantheon_admin_token(),
             "X-Current-Event-Id": settings.LEAGUE_PANTHEON_EVENT_ID,
-            "X-Current-Person-Id": settings.PANTHEON_ADMIN_ID,
+            "X-Current-Person-Id": pantheon_admin_id(),
         }
 
         data = {
