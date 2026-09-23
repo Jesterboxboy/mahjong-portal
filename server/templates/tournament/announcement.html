@@ -200,7 +200,7 @@
                                     <tr>
                                         <th scope="col">#</th>
                                         <th scope="col">{% trans 'Name' %}</th>
-                                        <th scope="col">{% trans 'City' %}</th>
+                                        <th scope="col">{% trans 'Country' %}</th>
                                         {% if tournament.is_online %}
                                             {% if tournament.is_majsoul_tournament %}
                                                 <th scope="col">{% trans 'Majsoul nickname' %}</th>
@@ -246,12 +246,10 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if registration_item.player and registration_item.player.city %}
-                                                    <a href="{% url 'city_page' registration_item.player.city.slug %}">{{ registration_item.player.city.name }}</a>
-                                                {% elif registration_item.city_object %}
-                                                    <a href="{% url 'city_page' registration_item.city_object.slug %}">{{ registration_item.city_object.name }}</a>
-                                                {% else %}
-                                                    {{ registration_item.city }}
+                                                {% if registration_item.registration_country %}
+                                                    {{ registration_item.registration_country }}
+                                                {% elif registration_item.player.country %}
+                                                    {{ registration_item.player.country.name }}
                                                 {% endif %}
                                             </td>
                                             {% if tournament.is_online %}

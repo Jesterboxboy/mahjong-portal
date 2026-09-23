@@ -8,6 +8,7 @@ from django.test import TestCase, override_settings
 
 from account.models import User
 from settings.models import Country
+from tournament.forms import TournamentRegistrationForm
 from tournament.models import Tournament, TournamentRegistration
 from utils.general import split_name
 
@@ -262,3 +263,55 @@ class PendingRegistrationsCountTest(TestCase):
         self.tournament.registrations_pre_moderation = False
         self.tournament.save()
         self.assertNotIn("Registrations waiting for approval", self.client.get(url).content.decode())
+
+
+class CountryDropdownTest(TestCase):
+    def setUp(self):
+        self.country = Country.objects.create(code="AT", name="Austria")
+        Country.objects.create(code="DE", name="Germany")
+        self.tournament = Tournament.objects.create(
+            name="Country Cup",
+            slug="country-cup",
+            end_date=datetime.date(2026, 1, 1),
+            country=self.country,
+            is_upcoming=True,
+            opened_registration=True,
+        )
+
+    def _form(self, data=None, initial=None):
+        form_initial = {"tournament": self.tournament}
+        form_initial.update(initial or {})
+        return TournamentRegistrationForm(data=data, initial=form_initial)
+
+    def test_choices_come_from_country_table(self):
+        choices = self._form().fields["registration_country"].choices
+        self.assertEqual(choices, [("", "---------"), ("Austria", "Austria"), ("Germany", "Germany")])
+
+    def test_unknown_country_is_rejected(self):
+        data = {
+            "first_name": "Hans",
+            "last_name": "Müller",
+            "registration_country": "Ausitra",
+            "city": "Wien",
+            "email": "h@example.com",
+            "allow_to_save_data": "on",
+        }
+        self.assertFalse(self._form(data=data).is_valid())
+
+        data["registration_country"] = "Austria"
+        self.assertTrue(self._form(data=data).is_valid(), self._form(data=data).errors)
+
+    def test_participants_table_shows_country_not_city(self):
+        TournamentRegistration.objects.create(
+            tournament=self.tournament,
+            first_name="Hans",
+            last_name="Müller",
+            city="Wien",
+            registration_country="Austria",
+            email="h@example.com",
+            is_approved=True,
+        )
+        page = self.client.get(self.tournament.get_url().replace("/de/", "/en/", 1)).content.decode()
+
+        self.assertIn("Austria", page)
+        self.assertNotIn("Wien", page)

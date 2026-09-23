@@ -3,12 +3,28 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from settings.models import Country
 from tournament.models import (
     MsOnlineTournamentRegistration,
     OnlineTournamentRegistration,
     TournamentApplication,
     TournamentRegistration,
 )
+
+
+def _use_country_dropdown(form):
+    """Replace the free-text country input with the Country table as a dropdown.
+
+    Values outside the table are rejected — that is the point: the field used to collect
+    "Ausitra" and "Osterreich" for the same country. Seed the table with
+    `manage.py seed_countries`.
+    """
+    field = form.fields["registration_country"]
+    form.fields["registration_country"] = forms.ChoiceField(
+        choices=[("", "---------")] + list(Country.objects.values_list("name", "name")),
+        label=field.label,
+        required=field.required,
+    )
 
 
 class TournamentRegistrationForm(forms.ModelForm):
@@ -35,6 +51,7 @@ class TournamentRegistrationForm(forms.ModelForm):
         tournament = kwargs.get("initial", {}).get("tournament")
 
         self.fields["allow_to_save_data"].label = _("I allow to store my personal data")
+        _use_country_dropdown(self)
         if tournament.display_notes:
             self.fields["notes"].widget = forms.Textarea(attrs={"rows": 2})
             if tournament.is_command:
@@ -66,6 +83,7 @@ class OnlineTournamentRegistrationForm(forms.ModelForm):
         tournament = kwargs.get("initial", {}).get("tournament")
 
         self.fields["allow_to_save_data"].label = _("I allow to store my personal data")
+        _use_country_dropdown(self)
 
         if tournament.display_notes:
             self.fields["notes"].widget = forms.Textarea(attrs={"rows": 2})

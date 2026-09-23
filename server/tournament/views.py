@@ -165,7 +165,8 @@ def pantheon_registration_initial(user):
         "first_name": first_name,
         "last_name": last_name,
         "city": data.get("city") or "",
-        "registration_country": country and country.name or country_code,
+        # only a known country: the dropdown in the form rejects anything else
+        "registration_country": country and country.name,
         "email": user.email,
         "phone": _last_known_pantheon_phone(user),
     }
