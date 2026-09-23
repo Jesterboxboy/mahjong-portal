@@ -1,5 +1,6 @@
 #!/bin/bash
-# Backup a running mahjong-portal instance: database, media, env file.
+# Backup a running mahjong-portal instance: database and media.
+# Secrets (.envs/*.env) are deliberately NOT included - keep them in a password manager.
 # Safe to run while the portal is up (pg_dump is consistent, media is copied read-only).
 #
 # Usage:  portal-backup.sh [PORTAL_DIR] [BACKUP_DIR]
@@ -12,13 +13,12 @@ set -euo pipefail
 PORTAL_DIR="${1:-/srv/docker-compose/mahjong-portal}"
 BACKUP_DIR="${2:-/mnt/backup/portal}"
 KEEP="${KEEP:-14}"              # number of runs to keep
-ENV_FILE="${ENV_FILE:-.envs/.production.env}"
 
 die() { echo "portal-backup: $*" >&2; exit 1; }
 
 [[ -d "$PORTAL_DIR" ]] || die "portal dir not found: $PORTAL_DIR"
 cd "$PORTAL_DIR"
-[[ -f "$ENV_FILE" ]] || die "env file not found: $PORTAL_DIR/$ENV_FILE"
+[[ -f docker-compose.yml ]] || die "no docker-compose.yml in $PORTAL_DIR"
 
 # A missing backup mount would otherwise silently fill the root filesystem.
 mountpoint -q "$(dirname "$BACKUP_DIR")" || [[ -d "$BACKUP_DIR" ]] ||
@@ -46,12 +46,6 @@ fi
 if [[ -d files/media ]]; then
     tar czf "$TARGET/media.tar.gz" files/media
 fi
-
-# Contains the Pantheon token and DB password: keep it unreadable for anybody but root.
-cp "$ENV_FILE" "$TARGET/production.env"
-# CIFS/SMB and FAT targets reject chmod; the file is copied either way, so only warn.
-chmod 600 "$TARGET/production.env" 2>/dev/null ||
-    echo "portal-backup: warning - could not chmod 600 production.env (permissions come from the mount)" >&2
 
 # Record what produced this backup, so a restore can check out the matching code.
 {

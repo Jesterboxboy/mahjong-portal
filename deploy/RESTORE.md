@@ -6,8 +6,7 @@ Backups are made by `portal-backup.sh`. Each run writes one timestamped director
 /mnt/backup/portal/2026-09-23_033000/
 ├── MANIFEST         # date, portal path, git commit, postgres version
 ├── portal.dump      # database, pg_dump custom format
-├── media.tar.gz     # files/media, user uploads
-└── production.env   # secrets, mode 600
+└── media.tar.gz     # files/media, user uploads
 /mnt/backup/portal/latest -> 2026-09-23_033000
 ```
 
@@ -60,11 +59,14 @@ docker compose exec web python manage.py update_index   # search index
    git checkout <commit-from-MANIFEST>
    ```
 
-3. **Put the secrets back:**
+3. **Put the secrets back.** They are **not** in the backup by design — restore
+   `.envs/.production.env` from your password manager. It needs at least
+   `DJANGO_SECRET_KEY`, the Postgres credentials and the Pantheon settings, and the
+   Postgres password must match the one the dumped database was created with.
 
    ```bash
    mkdir -p $PORTAL/.envs
-   cp $BACKUP/production.env $PORTAL/.envs/.production.env
+   $EDITOR $PORTAL/.envs/.production.env
    chmod 600 $PORTAL/.envs/.production.env
    ```
 
@@ -118,6 +120,8 @@ an error, log in there again with the Pantheon admin account. The connector fall
 
 ## What is not in the backup
 
+- `.envs/.production.env` and any other secrets — kept in a password manager instead, so
+  the backup target never holds credentials.
 - `files/collected_static` — rebuilt by `collectstatic`.
 - `files/whoosh_index` — rebuilt by `update_index`.
 - Docker images — pulled by `docker compose up`, so pin or rebuild them from the checked-out code.
