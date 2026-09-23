@@ -1,24 +1,36 @@
 # Restoring a mahjong-portal backup
 
-Backups are made by `portal-backup.sh`. Each run writes one timestamped directory:
+Backups are made by `portal-backup.sh`. Each run writes one archive:
 
 ```
-/mnt/backup/portal/2026-09-23_033000/
-├── MANIFEST         # date, portal path, git commit, postgres version
-├── portal.dump      # database, pg_dump custom format
-└── media.tar.gz     # files/media, user uploads
-/mnt/backup/portal/latest -> 2026-09-23_033000
+/mnt/backup/portal/portal-2026-09-23_033000.tar.gz
+/mnt/backup/portal/latest.tar.gz -> portal-2026-09-23_033000.tar.gz
 ```
 
-The `latest` symlink points at the newest run. On mounts without symlink support
-(CIFS/SMB, FAT) the script writes `latest.txt` containing the directory name instead:
+Each archive contains:
+
+```
+MANIFEST          # date, portal path, git commit, postgres version
+portal.dump       # database, pg_dump custom format
+files/media/      # user uploads
+```
+
+`latest.tar.gz` points at the newest run. On mounts without symlink support (CIFS/SMB,
+FAT) the script writes `latest.txt` holding the file name instead. Unpack the newest
+backup into a working directory:
 
 ```bash
-BACKUP=/mnt/backup/portal/latest
-[ -e "$BACKUP" ] || BACKUP=/mnt/backup/portal/$(cat /mnt/backup/portal/latest.txt)
+PORTAL=/srv/docker-compose/mahjong-portal
+ARCHIVE=/mnt/backup/portal/latest.tar.gz
+[ -e "$ARCHIVE" ] || ARCHIVE=/mnt/backup/portal/$(cat /mnt/backup/portal/latest.txt)
+
+BACKUP=$(mktemp -d)
+tar xzf "$ARCHIVE" -C "$BACKUP"
+cat $BACKUP/MANIFEST
 ```
 
-Throughout: `PORTAL=/srv/docker-compose/mahjong-portal`, `BACKUP=/mnt/backup/portal/latest`.
+The steps below use `$PORTAL` and that extracted `$BACKUP`. Delete it when you are done:
+it holds a full copy of the database.
 
 ## 1. Restore the database into the existing instance
 
@@ -84,10 +96,10 @@ docker compose exec web python manage.py update_index   # search index
      'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' < $BACKUP/portal.dump
    ```
 
-6. **Restore the media files** (the archive contains the `files/media` path already):
+6. **Restore the media files:**
 
    ```bash
-   tar xzf $BACKUP/media.tar.gz -C $PORTAL
+   cp -a $BACKUP/files/media/. $PORTAL/files/media/
    ```
 
 7. **Start everything and rebuild the derived files:**
