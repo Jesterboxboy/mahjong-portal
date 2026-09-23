@@ -11,6 +11,14 @@ Backups are made by `portal-backup.sh`. Each run writes one timestamped director
 /mnt/backup/portal/latest -> 2026-09-23_033000
 ```
 
+The `latest` symlink points at the newest run. On mounts without symlink support
+(CIFS/SMB, FAT) the script writes `latest.txt` containing the directory name instead:
+
+```bash
+BACKUP=/mnt/backup/portal/latest
+[ -e "$BACKUP" ] || BACKUP=/mnt/backup/portal/$(cat /mnt/backup/portal/latest.txt)
+```
+
 Throughout: `PORTAL=/srv/docker-compose/mahjong-portal`, `BACKUP=/mnt/backup/portal/latest`.
 
 ## 1. Restore the database into the existing instance

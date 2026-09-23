@@ -25,8 +25,9 @@ mountpoint -q "$(dirname "$BACKUP_DIR")" || [[ -d "$BACKUP_DIR" ]] ||
     die "backup target not available: $BACKUP_DIR"
 mkdir -p "$BACKUP_DIR"
 
-# Never let two runs (or a run and a slow predecessor) overlap.
-exec 9>"$BACKUP_DIR/.lock"
+# Never let two runs (or a run and a slow predecessor) overlap. The lock lives on local
+# disk: network mounts do not reliably support flock.
+exec 9>"${LOCK_FILE:-/run/portal-backup.lock}"
 flock -n 9 || die "another backup is still running"
 
 STAMP="$(date +%Y-%m-%d_%H%M%S)"
@@ -48,7 +49,9 @@ fi
 
 # Contains the Pantheon token and DB password: keep it unreadable for anybody but root.
 cp "$ENV_FILE" "$TARGET/production.env"
-chmod 600 "$TARGET/production.env"
+# CIFS/SMB and FAT targets reject chmod; the file is copied either way, so only warn.
+chmod 600 "$TARGET/production.env" 2>/dev/null ||
+    echo "portal-backup: warning - could not chmod 600 production.env (permissions come from the mount)" >&2
 
 # Record what produced this backup, so a restore can check out the matching code.
 {
@@ -59,7 +62,13 @@ chmod 600 "$TARGET/production.env"
 } > "$TARGET/MANIFEST"
 
 trap - ERR
-ln -sfn "$TARGET" "$BACKUP_DIR/latest"
+
+# Pointer to the newest run. CIFS/SMB and FAT mounts have no symlinks, so fall back to a
+# text file; RESTORE.md reads both.
+if ! ln -sfn "$TARGET" "$BACKUP_DIR/latest" 2>/dev/null; then
+    rm -rf "$BACKUP_DIR/latest"
+    echo "$STAMP" > "$BACKUP_DIR/latest.txt"
+fi
 
 # Rotation: keep the newest $KEEP timestamped dirs.
 find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -name '20*' -printf '%f\n' |
