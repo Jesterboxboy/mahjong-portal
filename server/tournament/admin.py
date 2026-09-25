@@ -7,13 +7,14 @@ from django.contrib import admin, messages
 from django.db import transaction
 from django.db.models import Max
 from django.http import HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from modeltranslation.admin import TranslationAdmin
 from tinymce.widgets import TinyMCE
 
-from mahjong_portal.notifications import registrant_email
+from mahjong_portal.notifications import bulk_email_recipients, send_bulk_email, waitlist_email
 from player.models import Player
 from settings.models import Country
 from tournament.models import (
@@ -29,13 +30,68 @@ from tournament.models import (
 from utils.new_pantheon import get_rating_table
 
 
+def _confirm_bulk_email(modeladmin, request, queryset, email_type, action_name, audience):
+    """Show every address the send would reach, then send on the confirming POST.
+
+    A bulk send cannot be taken back, so the recipient list is always shown first —
+    built from the same bulk_email_recipients() call that the send then uses.
+    """
+    plan = [
+        {
+            "tournament": tournament,
+            "template": tournament.email_templates.filter(email_type=email_type).first(),
+            "recipients": bulk_email_recipients(tournament, email_type),
+        }
+        for tournament in queryset
+    ]
+
+    if request.POST.get("confirmed"):
+        total = sum(send_bulk_email(entry["tournament"], email_type, entry["recipients"]) for entry in plan)
+        modeladmin.message_user(request, f"Email sent to {total} recipient(s).", level=messages.SUCCESS)
+        return None
+
+    return render(
+        request,
+        "admin/tournament/confirm_bulk_email.html",
+        {
+            "plan": plan,
+            "total": sum(len(entry["recipients"]) for entry in plan),
+            "missing_template": [entry["tournament"] for entry in plan if not entry["template"]],
+            "audience": audience,
+            "action_name": action_name,
+            "tournament_pks": list(queryset.values_list("pk", flat=True)),
+        },
+    )
+
+
 def send_registrant_email(modeladmin, request, queryset):
     """Send each selected tournament's registrant email to all its approved players."""
-    total = sum(registrant_email(tournament) for tournament in queryset)
-    modeladmin.message_user(request, f"Registrant email sent to {total} approved player(s).", level=messages.SUCCESS)
+    return _confirm_bulk_email(
+        modeladmin,
+        request,
+        queryset,
+        TournamentEmailTemplate.REGISTRANT,
+        "send_registrant_email",
+        "approved players only",
+    )
 
 
-send_registrant_email.short_description = "Send bulk email to registered players"
+send_registrant_email.short_description = "Send bulk email to approved players"
+
+
+def send_email_to_all(modeladmin, request, queryset):
+    """Send each selected tournament's "email to all" template to every registrant."""
+    return _confirm_bulk_email(
+        modeladmin,
+        request,
+        queryset,
+        TournamentEmailTemplate.ALL,
+        "send_email_to_all",
+        "approved, waitlisted and unapproved registrants",
+    )
+
+
+send_email_to_all.short_description = "Send email to all registered players (incl. waitlist & unapproved)"
 
 
 def approve_and_send_confirmation(modeladmin, request, queryset):
@@ -101,6 +157,7 @@ def add_to_waitlist(modeladmin, request, queryset):
     row cannot be in both lists. Demote first (untick approval), then waitlist.
     """
     added = 0
+    mailed = 0
     next_number = {}
     for registration in queryset.filter(is_approved=False, waitlist_number__isnull=True).order_by("created_on"):
         tournament_id = registration.tournament_id
@@ -109,15 +166,19 @@ def add_to_waitlist(modeladmin, request, queryset):
                 Max("waitlist_number")
             )
             next_number[tournament_id] = (highest["waitlist_number__max"] or 0) + 1
-        # queryset update: nothing to notify here, and it keeps the approval hook out of it
+        # queryset update: keeps the approval hook out of it
         TournamentRegistration.objects.filter(pk=registration.pk).update(waitlist_number=next_number[tournament_id])
+        registration.waitlist_number = next_number[tournament_id]
         next_number[tournament_id] += 1
         added += 1
+        if waitlist_email(registration):
+            mailed += 1
 
     skipped = queryset.count() - added
     modeladmin.message_user(
         request,
-        f"Added {added} registration(s) to the waitlist. Skipped {skipped} (already approved or already listed).",
+        f"Added {added} registration(s) to the waitlist, emailed {mailed}. "
+        f"Skipped {skipped} (already approved or already listed).",
         level=messages.SUCCESS if not skipped else messages.WARNING,
     )
 
@@ -253,7 +314,7 @@ class TournamentAdmin(TranslationAdmin):
     ordering = ["-end_date"]
 
     filter_horizontal = ["clubs", "non_playing_organizers"]
-    actions = [load_pantheon_results, send_registrant_email]
+    actions = [load_pantheon_results, send_registrant_email, send_email_to_all]
     inlines = [TournamentEmailTemplateInline]
 
     fieldsets = [

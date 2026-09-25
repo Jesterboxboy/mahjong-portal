@@ -409,3 +409,162 @@ class WaitlistTest(TestCase):
         self._registration()
         page = self.client.get(self.tournament.get_url().replace("/de/", "/en/", 1)).content.decode()
         self.assertNotIn("Waiting list", page)
+
+
+class RegistrationNameLinkTest(TestCase):
+    """The registration pane lists names as plain text, with no link to the player profile."""
+
+    def setUp(self):
+        from player.models import Player
+
+        country = Country.objects.create(code="AT", name="Austria")
+        self.tournament = Tournament.objects.create(
+            name="Link Free Cup",
+            slug="link-free-cup",
+            end_date=datetime.date(2026, 1, 1),
+            country=country,
+            is_upcoming=True,
+        )
+        self.player = Player.objects.create(first_name="Hans", last_name="Müller", slug="hans-mueller", country=country)
+        self.user = User.objects.create_user(username="v@example.com", email="v@example.com", password="pw")
+        self.user.attached_player = self.player
+        self.user.save()
+
+    def _registration(self, **kwargs):
+        return TournamentRegistration.objects.create(
+            tournament=self.tournament,
+            player=self.player,
+            first_name="Hans",
+            last_name="Müller",
+            city="Wien",
+            registration_country="Austria",
+            email="h@example.com",
+            **kwargs,
+        )
+
+    def test_no_profile_link_for_participants_or_waitlist(self):
+        self._registration(is_approved=True)
+        self._registration(is_approved=False, waitlist_number=1)
+
+        self.client.force_login(self.user)
+        page = self.client.get(self.tournament.get_url().replace("/de/", "/en/", 1)).content.decode()
+        pane = page.split('id="registration-pane"')[1]
+
+        # full_name is "last first" for both the player and the registration — unchanged, just unlinked
+        self.assertEqual(pane.count("Müller Hans"), 2)
+        self.assertNotIn(self.player.slug, pane)
+
+
+class EmailTypesTest(TestCase):
+    """Point 14: registrant = approved only, plus the waitlist and "to all" types."""
+
+    def setUp(self):
+        country = Country.objects.create(code="AT", name="Austria")
+        self.tournament = Tournament.objects.create(
+            name="Graz Riichi Open",
+            slug="graz-riichi-open",
+            end_date=datetime.date(2026, 1, 1),
+            country=country,
+            is_upcoming=True,
+        )
+        self.approved = self._registration("approved@example.com", is_approved=True)
+        self.pending = self._registration("pending@example.com", is_approved=False)
+        self.waiting = self._registration("waiting@example.com", is_approved=False, waitlist_number=1)
+
+    def _registration(self, email, **kwargs):
+        return TournamentRegistration.objects.create(
+            tournament=self.tournament,
+            first_name="Hans",
+            last_name="Müller",
+            city="Wien",
+            registration_country="Austria",
+            email=email,
+            **kwargs,
+        )
+
+    def _template(self, email_type):
+        from tournament.models import TournamentEmailTemplate
+
+        return TournamentEmailTemplate.objects.create(
+            tournament=self.tournament,
+            email_type=email_type,
+            subject="Hello {{first_name}}",
+            body="Body",
+        )
+
+    @staticmethod
+    def _recipients():
+        return sorted(address for message in mail.outbox for address in message.to)
+
+    def _addresses(self, email_type):
+        from mahjong_portal.notifications import bulk_email_recipients
+
+        return sorted(address for _, address in bulk_email_recipients(self.tournament, email_type))
+
+    def test_registrant_audience_is_approved_players_only(self):
+        from tournament.models import TournamentEmailTemplate
+
+        self.assertEqual(self._addresses(TournamentEmailTemplate.REGISTRANT), ["approved@example.com"])
+
+    def test_email_to_all_audience_is_every_registrant(self):
+        from tournament.models import TournamentEmailTemplate
+
+        self.assertEqual(
+            self._addresses(TournamentEmailTemplate.ALL),
+            ["approved@example.com", "pending@example.com", "waiting@example.com"],
+        )
+
+    def _run_bulk_action(self, action, confirmed):
+        from unittest.mock import MagicMock
+
+        from django.test import RequestFactory
+
+        data = {"confirmed": "1"} if confirmed else {}
+        request = RequestFactory().post("/admin/tournament/tournament/", data)
+        return action(MagicMock(), request, Tournament.objects.filter(pk=self.tournament.pk))
+
+    def test_bulk_send_shows_the_recipients_before_sending(self):
+        from tournament.admin import send_email_to_all
+        from tournament.models import TournamentEmailTemplate
+
+        self._template(TournamentEmailTemplate.ALL)
+
+        response = self._run_bulk_action(send_email_to_all, confirmed=False)
+
+        self.assertEqual(mail.outbox, [])
+        page = response.content.decode()
+        for address in ["approved@example.com", "pending@example.com", "waiting@example.com"]:
+            self.assertIn(address, page)
+
+    def test_bulk_send_delivers_once_confirmed(self):
+        from tournament.admin import send_email_to_all
+        from tournament.models import TournamentEmailTemplate
+
+        self._template(TournamentEmailTemplate.ALL)
+
+        self.assertIsNone(self._run_bulk_action(send_email_to_all, confirmed=True))
+        self.assertEqual(self._recipients(), ["approved@example.com", "pending@example.com", "waiting@example.com"])
+
+    def test_adding_to_the_waitlist_emails_the_registrant(self):
+        from unittest.mock import MagicMock
+
+        from tournament.admin import add_to_waitlist
+        from tournament.models import TournamentEmailTemplate
+
+        self._template(TournamentEmailTemplate.WAITLIST)
+
+        add_to_waitlist(MagicMock(), None, TournamentRegistration.objects.filter(pk=self.pending.pk))
+
+        self.assertEqual(self._recipients(), ["pending@example.com"])
+        self.assertEqual(mail.outbox[0].subject, "Hello Hans")
+
+    def test_no_waitlist_template_means_no_mail(self):
+        from unittest.mock import MagicMock
+
+        from tournament.admin import add_to_waitlist
+
+        add_to_waitlist(MagicMock(), None, TournamentRegistration.objects.filter(pk=self.pending.pk))
+
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.waitlist_number, 2)  # still listed, just not told
+        self.assertEqual(mail.outbox, [])

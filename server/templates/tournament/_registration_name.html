@@ -1,10 +1,9 @@
 {# Registrant name for public tables. Expects `registration_item`. #}
 {# Full name only for logged-in users with a linked player profile; everyone else sees it abbreviated. #}
+{# plain text, never a link: the registration pane does not link out to player profiles #}
 {% if user.is_authenticated and user.attached_player %}
     {% if registration_item.player %}
-        {% with registration_item.player as player %}
-            {% include 'common/_player_name.html' %}
-        {% endwith %}
+        {{ registration_item.player.full_name }}
     {% else %}
         {{ registration_item.full_name }}
     {% endif %}

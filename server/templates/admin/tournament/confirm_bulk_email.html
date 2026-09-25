@@ -1,0 +1,57 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Send bulk email</h1>
+<p>Audience: <strong>{{ audience }}</strong>. The email is sent individually to each address below.</p>
+
+{% if missing_template %}
+    <ul class="messagelist"><li class="warning">
+        No template of this type is configured for:
+        {% for tournament in missing_template %}{{ tournament.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+        Nothing will be sent for those.
+    </li></ul>
+{% endif %}
+
+{% for entry in plan %}
+    <h2>{{ entry.tournament.name }} — {{ entry.recipients|length }} recipient{{ entry.recipients|length|pluralize }}</h2>
+    {% if entry.template %}
+        <p>Subject: <strong>{{ entry.template.subject }}</strong></p>
+    {% endif %}
+    {% if entry.recipients %}
+        <table>
+            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Approved</th><th>Waitlist</th></tr></thead>
+            <tbody>
+            {% for registration, address in entry.recipients %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ registration.first_name }} {{ registration.last_name }}</td>
+                    <td>{{ address }}</td>
+                    <td>{{ registration.is_approved|yesno:"yes,no" }}</td>
+                    <td>{{ registration.waitlist_number|default_if_none:"—" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No recipients — nobody in this audience has a usable email address.</p>
+    {% endif %}
+{% endfor %}
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="{{ action_name }}">
+    {% for pk in tournament_pks %}
+        <input type="hidden" name="_selected_action" value="{{ pk }}">
+    {% endfor %}
+    <input type="hidden" name="confirmed" value="1">
+
+    <p>
+        {% if total %}
+            <input type="submit" value="Send to {{ total }} recipient{{ total|pluralize }}" class="default">
+        {% else %}
+            <strong>Nothing to send.</strong>
+        {% endif %}
+        &nbsp;
+        <a href="#" onclick="history.back(); return false;">Cancel</a>
+    </p>
+</form>
+{% endblock %}

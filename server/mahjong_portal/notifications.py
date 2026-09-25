@@ -111,23 +111,45 @@ def confirmation_email(registration):
     _send(subject, body, [recipient], reply_to=template.reply_to)
 
 
-def registrant_email(tournament):
-    """Send the tournament's registrant template to all approved players. Returns count sent."""
+def bulk_email_recipients(tournament, email_type):
+    """(registration, address) pairs a bulk send of this type would reach.
+
+    The audience per type lives here alone, so the confirmation screen lists exactly
+    what the send will use. Registrants without a usable address drop out here.
+    """
     from tournament.models import TournamentEmailTemplate
 
-    template = tournament.email_templates.filter(email_type=TournamentEmailTemplate.REGISTRANT).first()
+    if email_type == TournamentEmailTemplate.ALL:
+        registrations = tournament.all_registrations()
+    else:
+        # get_tournament_registrations() filters is_approved=True, so pending and
+        # waitlisted registrants are never in the registrant audience.
+        registrations = tournament.get_tournament_registrations()
+
+    return [(r, address) for r in registrations if (address := r.get_recipient_email())]
+
+
+def send_bulk_email(tournament, email_type, recipients):
+    """Send one tournament template to each (registration, address) pair. Returns count sent."""
+    template = tournament.email_templates.filter(email_type=email_type).first()
     if not template:
         return 0
 
-    sent = 0
-    for registration in tournament.get_tournament_registrations():
-        recipient = registration.get_recipient_email()
-        if not recipient:
-            continue
+    for registration, address in recipients:
         subject, body = _render(template, registration)
-        _send(subject, body, [recipient], reply_to=template.reply_to)
-        sent += 1
-    return sent
+        _send(subject, body, [address], reply_to=template.reply_to)
+    return len(recipients)
+
+
+def waitlist_email(registration):
+    """Tell one registrant they were put on the tournament's waiting list."""
+    from tournament.models import TournamentEmailTemplate
+
+    address = registration.get_recipient_email()
+    if not address:
+        return False
+
+    return bool(send_bulk_email(registration.tournament, TournamentEmailTemplate.WAITLIST, [(registration, address)]))
 
 
 def _send(subject, body, recipients, reply_to=None):

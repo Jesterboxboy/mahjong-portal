@@ -321,6 +321,14 @@ class Tournament(BaseModel):
         else:
             return self.tournament_registrations.filter(is_approved=True)
 
+    def all_registrations(self):
+        """Every registration row — approved, waitlisted and still-pending alike."""
+        if self.is_online():
+            if self.is_majsoul_tournament:
+                return self.ms_online_tournament_registrations.all()
+            return self.online_tournament_registrations.all()
+        return self.tournament_registrations.all()
+
     def pending_registrations_count(self):
         if not self.registrations_pre_moderation:
             return 0
@@ -593,9 +601,13 @@ class MsOnlineTournamentRegistration(RegistrationConfirmationMixin, BaseModel):
 class TournamentEmailTemplate(BaseModel):
     CONFIRMATION = "confirmation"
     REGISTRANT = "registrant"
+    WAITLIST = "waitlist"
+    ALL = "all"
     EMAIL_TYPES = [
         (CONFIRMATION, _("Confirmation email (sent when a registration is approved)")),
-        (REGISTRANT, _("Registrant email (bulk send to all approved players)")),
+        (REGISTRANT, _("Registrant email (bulk send to approved players only)")),
+        (WAITLIST, _("Waitlist email (sent when a registration is put on the waitlist)")),
+        (ALL, _("Email to all (bulk send to approved, waitlist and unapproved players)")),
     ]
 
     tournament = models.ForeignKey(Tournament, related_name="email_templates", on_delete=models.CASCADE)
