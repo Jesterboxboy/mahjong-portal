@@ -332,6 +332,18 @@ class Tournament(BaseModel):
 
         return self.tournament_registrations.filter(is_approved=False).count()
 
+    def waitlist_registrations(self):
+        """Waitlist candidates in queue order.
+
+        Offline registrations only — they are the only model carrying the field, so this is
+        empty for online/majsoul tournaments.
+        """
+        return (
+            self.tournament_registrations.filter(waitlist_number__isnull=False)
+            .select_related("player")
+            .order_by("waitlist_number")
+        )
+
     def championship_tournament_results(self):
         return TournamentResult.objects.filter(tournament=self).order_by("place")[:8]
 
@@ -413,6 +425,9 @@ class TournamentRegistration(RegistrationConfirmationMixin, BaseModel):
     tournament = models.ForeignKey(Tournament, related_name="tournament_registrations", on_delete=models.PROTECT)
     is_approved = models.BooleanField(default=True)
     has_paid = models.BooleanField(default=False, verbose_name=_("Paid"))
+    # null = not on the waitlist. Set by the admin actions; gaps are expected and the
+    # public table renumbers around them.
+    waitlist_number = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Waitlist number"))
 
     first_name = models.CharField(max_length=255, verbose_name=_("First name"))
     last_name = models.CharField(max_length=255, verbose_name=_("Last name"))
@@ -475,6 +490,11 @@ class TournamentRegistration(RegistrationConfirmationMixin, BaseModel):
 
     def on_became_approved(self):
         from utils.new_pantheon import sync_registration_to_pantheon  # deferred: import cycle
+
+        if self.waitlist_number is not None:
+            # queryset update: this runs from inside save(), so save() here would recurse
+            type(self).objects.filter(pk=self.pk).update(waitlist_number=None)
+            self.waitlist_number = None
 
         sync_registration_to_pantheon(self)
         # only the admins hear about a failed push; the registrant is told once it works

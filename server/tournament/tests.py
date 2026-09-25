@@ -315,3 +315,97 @@ class CountryDropdownTest(TestCase):
 
         self.assertIn("Austria", page)
         self.assertNotIn("Wien", page)
+
+
+class WaitlistTest(TestCase):
+    def setUp(self):
+        country = Country.objects.create(code="AT", name="Austria")
+        self.tournament = Tournament.objects.create(
+            name="Graz Riichi Open",
+            slug="graz-riichi-open",
+            end_date=datetime.date(2026, 1, 1),
+            country=country,
+            is_upcoming=True,
+        )
+
+    def _registration(self, last_name="Müller", **kwargs):
+        kwargs.setdefault("is_approved", False)
+        return TournamentRegistration.objects.create(
+            tournament=self.tournament,
+            first_name="Hans",
+            last_name=last_name,
+            city="Wien",
+            registration_country="Austria",
+            email="h@example.com",
+            **kwargs,
+        )
+
+    @staticmethod
+    def _run(action, queryset):
+        from unittest.mock import MagicMock
+
+        action(MagicMock(), None, queryset)
+
+    def test_numbers_increment_and_approved_rows_are_skipped(self):
+        from tournament.admin import add_to_waitlist
+
+        first = self._registration("First")
+        second = self._registration("Second")
+        approved = self._registration("Approved", is_approved=True)
+
+        self._run(add_to_waitlist, TournamentRegistration.objects.all())
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        approved.refresh_from_db()
+        self.assertEqual(first.waitlist_number, 1)
+        self.assertEqual(second.waitlist_number, 2)
+        self.assertIsNone(approved.waitlist_number)
+
+    def test_numbering_continues_after_a_removal(self):
+        from tournament.admin import add_to_waitlist, remove_from_waitlist
+
+        first = self._registration("First")
+        self._registration("Second")
+        self._run(add_to_waitlist, TournamentRegistration.objects.all())
+        self._run(remove_from_waitlist, TournamentRegistration.objects.filter(pk=first.pk))
+
+        first.refresh_from_db()
+        self.assertIsNone(first.waitlist_number)
+
+        # 1 is now free but not reused: numbering continues past the highest, leaving a gap
+        later = self._registration("Later")
+        self._run(add_to_waitlist, TournamentRegistration.objects.filter(pk=later.pk))
+        later.refresh_from_db()
+        self.assertEqual(later.waitlist_number, 3)
+
+    def test_approving_clears_the_waitlist_number(self):
+        registration = self._registration(waitlist_number=3)
+
+        registration.is_approved = True
+        registration.save()
+
+        registration.refresh_from_db()
+        self.assertIsNone(registration.waitlist_number)
+
+    def test_table_renumbers_over_gaps(self):
+        self._registration("Alpha", waitlist_number=3)
+        self._registration("Beta", waitlist_number=7)
+        self._registration("NotListed")
+
+        page = self.client.get(self.tournament.get_url().replace("/de/", "/en/", 1)).content.decode()
+
+        self.assertIn("Waiting list", page)
+        waitlist_rows = page.split("Waiting list")[1]
+        self.assertIn("Alpha", waitlist_rows)
+        self.assertIn("Beta", waitlist_rows)
+        self.assertNotIn("NotListed", waitlist_rows)
+        # displayed 1, 2 — not the stored 3 and 7
+        self.assertIn('<th scope="row">1</th>', waitlist_rows)
+        self.assertIn('<th scope="row">2</th>', waitlist_rows)
+        self.assertNotIn('<th scope="row">3</th>', waitlist_rows)
+
+    def test_no_card_without_candidates(self):
+        self._registration()
+        page = self.client.get(self.tournament.get_url().replace("/de/", "/en/", 1)).content.decode()
+        self.assertNotIn("Waiting list", page)

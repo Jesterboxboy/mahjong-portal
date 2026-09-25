@@ -225,26 +225,7 @@
                                     {% for registration_item in registration_results %}
                                         <tr {% if registration_item.is_highlighted %}class="table-success" {% endif %}>
                                             <th scope="row">{{ forloop.counter }}</th>
-                                            <td>
-                                                {% if user.is_authenticated and user.attached_player %}
-                                                    {% if registration_item.player %}
-                                                        {% with registration_item.player as player %}
-                                                            {% include 'common/_player_name.html' %}
-                                                        {% endwith %}
-                                                    {% else %}
-                                                        {{ registration_item.full_name }}
-                                                    {% endif %}
-                                                {% else %}
-                                                    {# Show abbreviated name for users without a linked player profile #}
-                                                    {% if registration_item.player %}
-                                                        {{ registration_item.player.first_name }} {{ registration_item.player.last_name|slice:":1" }}.
-                                                    {% else %}
-                                                        {% with parts=registration_item.full_name.split %}
-                                                            {{ parts.0 }}{% if parts|length > 1 %} {{ parts|last|slice:":1" }}.{% endif %}
-                                                        {% endwith %}
-                                                    {% endif %}
-                                                {% endif %}
-                                            </td>
+                                            <td>{% include 'tournament/_registration_name.html' %}</td>
                                             <td>
                                                 {% if registration_item.registration_country %}
                                                     {{ registration_item.registration_country }}
@@ -288,6 +269,45 @@
                         </div>
                     </div>
                 {% endif %}
+
+                {% with waitlist_results=tournament.waitlist_registrations %}
+                    {% if waitlist_results %}
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-danger-subtle d-flex align-items-center gap-2">
+                                <strong>{% trans 'Waiting list' %}</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive-sm">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">{% trans 'Name' %}</th>
+                                            <th scope="col">{% trans 'Country' %}</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {# forloop.counter, not waitlist_number: the queue is renumbered over gaps #}
+                                        {% for registration_item in waitlist_results %}
+                                            <tr>
+                                                <th scope="row">{{ forloop.counter }}</th>
+                                                <td>{% include 'tournament/_registration_name.html' %}</td>
+                                                <td>
+                                                    {% if registration_item.registration_country %}
+                                                        {{ registration_item.registration_country }}
+                                                    {% elif registration_item.player.country %}
+                                                        {{ registration_item.player.country.name }}
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endwith %}
             </div>{# /registration-pane #}
 
             {# ── Info tab ──────────────────────────────────────────────── #}

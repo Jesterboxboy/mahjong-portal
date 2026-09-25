@@ -2603,3 +2603,11 @@ msgstr "Online-Rang anzeigen"
 #: tournament/models.py:120
 msgid "Show the players' Dan rank in the participants table of the announcement"
 msgstr "Dan-Rang der Spieler in der Teilnehmertabelle der Ankündigung anzeigen"
+
+#: templates/tournament/announcement.html
+msgid "Waiting list"
+msgstr "Warteliste"
+
+#: tournament/models.py
+msgid "Waitlist number"
+msgstr "Wartelistennummer"

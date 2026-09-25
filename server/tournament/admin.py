@@ -5,6 +5,7 @@ from datetime import date, datetime
 from django import forms
 from django.contrib import admin, messages
 from django.db import transaction
+from django.db.models import Max
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -91,6 +92,46 @@ def mark_as_paid(modeladmin, request, queryset):
 
 
 mark_as_paid.short_description = "Player has paid (entry fee)"
+
+
+def add_to_waitlist(modeladmin, request, queryset):
+    """Put the selected registrations on their tournament's waitlist, numbered per tournament.
+
+    Approved players are skipped: approving is what promotes somebody off the waitlist, so a
+    row cannot be in both lists. Demote first (untick approval), then waitlist.
+    """
+    added = 0
+    next_number = {}
+    for registration in queryset.filter(is_approved=False, waitlist_number__isnull=True).order_by("created_on"):
+        tournament_id = registration.tournament_id
+        if tournament_id not in next_number:
+            highest = TournamentRegistration.objects.filter(tournament_id=tournament_id).aggregate(
+                Max("waitlist_number")
+            )
+            next_number[tournament_id] = (highest["waitlist_number__max"] or 0) + 1
+        # queryset update: nothing to notify here, and it keeps the approval hook out of it
+        TournamentRegistration.objects.filter(pk=registration.pk).update(waitlist_number=next_number[tournament_id])
+        next_number[tournament_id] += 1
+        added += 1
+
+    skipped = queryset.count() - added
+    modeladmin.message_user(
+        request,
+        f"Added {added} registration(s) to the waitlist. Skipped {skipped} (already approved or already listed).",
+        level=messages.SUCCESS if not skipped else messages.WARNING,
+    )
+
+
+add_to_waitlist.short_description = "Add to waitlist..."
+
+
+def remove_from_waitlist(modeladmin, request, queryset):
+    """Take the selected registrations off the waitlist. Remaining numbers keep their gaps."""
+    removed = queryset.filter(waitlist_number__isnull=False).update(waitlist_number=None)
+    modeladmin.message_user(request, f"Removed {removed} registration(s) from the waitlist.", level=messages.SUCCESS)
+
+
+remove_from_waitlist.short_description = "Remove from waitlist..."
 
 
 class TournamentEmailTemplateInline(admin.StackedInline):
@@ -285,6 +326,7 @@ class TournamentRegistrationAdmin(admin.ModelAdmin):
         "id",
         "is_approved",
         "has_paid",
+        "waitlist_number",
         "tournament",
         "first_name",
         "last_name",
@@ -304,7 +346,13 @@ class TournamentRegistrationAdmin(admin.ModelAdmin):
     raw_id_fields = ["tournament", "player", "city_object", "user"]
     list_filter = [["tournament", admin.RelatedOnlyFieldListFilter], "has_paid", "created_on"]
     readonly_fields = ["created_on"]
-    actions = [approve_and_send_confirmation, retry_pantheon_registration, mark_as_paid]
+    actions = [
+        approve_and_send_confirmation,
+        retry_pantheon_registration,
+        mark_as_paid,
+        add_to_waitlist,
+        remove_from_waitlist,
+    ]
 
     def get_actions(self, request):
         actions = super().get_actions(request)
