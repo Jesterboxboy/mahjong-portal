@@ -3,14 +3,17 @@
 Austrian riichi ranking calculation engine.
 
 Formula (EMA standard):
-  points = round(((A - R) / (A - 1)) * 1000)
+  points = floor((A - R) / (A - 1) * 1000)
   where A = number of players, R = player's rank (1-based).
+  e.g. 25th of 100 -> 757, 75th of 100 -> 252.
   Last place (R == A) yields 0 and is discarded.
 
 Final score per player:
   AT score     = sum of points for all Austrian tournaments
   foreign score = sum of top-3 points for non-Austrian tournaments
   total         = AT score + foreign score
+
+Players with equal totals share a place (1, 2, 2, 4).
 """
 
 from austria_ranking.models import AustrianRanking, EmaTournamentResult
@@ -24,7 +27,8 @@ def calculate_points(player_count: int, position: int) -> int:
     """Return the ranking points for a given tournament result."""
     if player_count <= 1:
         return 0
-    return round(((player_count - position) / (player_count - 1)) * 1000)
+    # Integer maths: truncates like the official examples and avoids float error.
+    return (player_count - position) * 1000 // (player_count - 1)
 
 
 def _inject_organizer_bonuses(
@@ -128,6 +132,14 @@ def rank_players_for_period(quota_period) -> list[dict]:
         position=999,
     ).delete()
 
+    # Recompute stored points so formula changes apply to already-scraped rows
+    # (the scraper uses get_or_create and never updates existing points).
+    for r in EmaTournamentResult.objects.filter(quota_period=quota_period):
+        points = calculate_points(r.player_count, r.position)
+        if r.points != points:
+            r.points = points
+            r.save(update_fields=["points"])
+
     results = EmaTournamentResult.objects.filter(quota_period=quota_period, points__gt=0)
 
     # Group by ema_id
@@ -206,7 +218,11 @@ def rank_players_for_period(quota_period) -> list[dict]:
 
     # Persist to AustrianRanking, replacing any existing rows for this period
     AustrianRanking.objects.filter(quota_period=quota_period).delete()
-    for pos, row in enumerate(rankings, start=1):
+    pos = 0
+    for i, row in enumerate(rankings, start=1):
+        if i == 1 or row["total_points"] != rankings[i - 2]["total_points"]:
+            pos = i  # equal totals share the place of the first tied player
+        row["rank_position"] = pos
         AustrianRanking.objects.create(
             quota_period=quota_period,
             player=row["portal_player"],
