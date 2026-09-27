@@ -28,6 +28,7 @@ from austria_ranking.models import (
     QualificationModeInfo,
     QuotaEvent,
 )
+from austria_ranking.scraper import ema_ids_by_name
 from club.models import Club
 from news.models import NewsArticle
 from player.models import Player, PlayerQuotaEvent
@@ -576,6 +577,7 @@ def export_tournament_results(request, tournament_id):
     ]
 
     tournament = Tournament.objects.get(id=tournament_id)
+    ema_lookup = None
 
     for result in tournament.results.select_related("player", "country").all().order_by("place"):
         player = result.player
@@ -600,6 +602,10 @@ def export_tournament_results(request, tournament_id):
                 last_name = parts[0].upper()
                 if len(parts) > 1:
                     first_name = parts[1]
+                if ema_lookup is None:
+                    ema_lookup = ema_ids_by_name()  # fetched once, only if there are unlinked players
+                ema_id = ema_lookup.get((last_name, first_name.upper()), "")
+                is_ema_member = "YES" if ema_id else ""
             country_code = result.country and result.country.code or ""
 
         rows.append(

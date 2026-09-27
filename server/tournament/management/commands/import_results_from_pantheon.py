@@ -8,6 +8,14 @@ from tournament.models import Tournament, TournamentResult
 from utils.new_pantheon import get_rating_table
 
 
+def _to_last_first(title):
+    """Pantheon titles are "First Last"; player_string is stored as "Last First" (see EMA export)."""
+    # ponytail: assumes the surname is the last word; "Anna van Berg" -> "Berg Anna van".
+    # Link the player (pantheon_id) for exact names.
+    parts = (title or "").strip().rsplit(" ", 1)
+    return " ".join(reversed(parts))
+
+
 class Command(BaseCommand):
     help = "Import tournament results from a Pantheon event into the portal."
 
@@ -69,7 +77,7 @@ class Command(BaseCommand):
                 TournamentResult.objects.create(
                     tournament=tournament,
                     player=player,
-                    player_string=title if player is None else "",
+                    player_string=_to_last_first(title) if player is None else "",
                     place=place,
                     scores=scores,
                     games=entry.games_played,

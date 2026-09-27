@@ -39,6 +39,7 @@ import requests
 from bs4 import BeautifulSoup
 from dateutil.parser import parse as du_parse
 from django.conf import settings
+from django.core.cache import cache
 
 from austria_ranking.models import EmaTournamentResult
 
@@ -65,6 +66,43 @@ def _get(url: str) -> BeautifulSoup:
     resp = requests.get(url, timeout=30)
     resp.raise_for_status()
     return BeautifulSoup(resp.content, "html.parser")
+
+
+_PLAYER_LINK = re.compile(r"Players/(\d+)\.html")
+
+
+def ema_ids_by_name() -> dict[tuple[str, str], str]:
+    """
+    Map (LAST, FIRST) in upper case -> EMA number, built from the EMA riichi (RCR) ranking page.
+
+    Names shared by more than one EMA number are left out, so callers never get a guess.
+    Cached for a day; returns {} if the EMA site is unreachable.
+    """
+    cached = cache.get("ema_ids_by_name")
+    if cached is not None:
+        return cached
+
+    found: dict[tuple[str, str], set[str]] = {}
+    try:
+        soup = _get(f"{URLBASE}rcr.html")
+    except Exception as exc:
+        logger.error("Failed to fetch EMA RCR ranking page: %s", exc)
+        return {}
+    for row in soup.find_all("div", class_="TCTT_ligne"):
+        cells = row.find_all("p", recursive=False)
+        for i, cell in enumerate(cells[:-2]):
+            link = cell.find("a", href=_PLAYER_LINK)
+            if link:
+                ema_id = _PLAYER_LINK.search(link["href"]).group(1)
+                key = (cells[i + 1].get_text(strip=True).upper(), cells[i + 2].get_text(strip=True).upper())
+                found.setdefault(key, set()).add(ema_id)
+                break
+
+    # ponytail: exact name match only; players outside the RCR ranking (inactive/new) or with
+    # different spelling/accents won't be found. Link them to a Player with ema_id instead.
+    result = {key: ids.pop() for key, ids in found.items() if len(ids) == 1}
+    cache.set("ema_ids_by_name", result, 60 * 60 * 24)
+    return result
 
 
 def scrape_at_players() -> list[dict]:
