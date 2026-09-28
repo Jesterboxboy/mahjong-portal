@@ -71,18 +71,19 @@ def _get(url: str) -> BeautifulSoup:
 _PLAYER_LINK = re.compile(r"Players/(\d+)\.html")
 
 
-def ema_ids_by_name() -> dict[tuple[str, str], str]:
+def ema_players_by_name() -> dict[tuple[str, str], tuple[str, str]]:
     """
-    Map (LAST, FIRST) in upper case -> EMA number, built from the EMA riichi (RCR) ranking page.
+    Map (LAST, FIRST) in upper case -> (EMA number, country code like "AT"),
+    built from the EMA riichi (RCR) ranking page.
 
     Names shared by more than one EMA number are left out, so callers never get a guess.
     Cached for a day; returns {} if the EMA site is unreachable.
     """
-    cached = cache.get("ema_ids_by_name")
+    cached = cache.get("ema_players_by_name")
     if cached is not None:
         return cached
 
-    found: dict[tuple[str, str], set[str]] = {}
+    found: dict[tuple[str, str], set[tuple[str, str]]] = {}
     try:
         soup = _get(f"{URLBASE}rcr.html")
     except Exception as exc:
@@ -90,18 +91,20 @@ def ema_ids_by_name() -> dict[tuple[str, str], str]:
         return {}
     for row in soup.find_all("div", class_="TCTT_ligne"):
         cells = row.find_all("p", recursive=False)
-        for i, cell in enumerate(cells[:-2]):
+        for i, cell in enumerate(cells[:-3]):
             link = cell.find("a", href=_PLAYER_LINK)
             if link:
                 ema_id = _PLAYER_LINK.search(link["href"]).group(1)
                 key = (cells[i + 1].get_text(strip=True).upper(), cells[i + 2].get_text(strip=True).upper())
-                found.setdefault(key, set()).add(ema_id)
+                flag = cells[i + 3].find("img", src=COUNTRY_FLAG_PATTERN)
+                country = COUNTRY_FLAG_PATTERN.search(flag["src"]).group(1).upper() if flag else ""
+                found.setdefault(key, set()).add((ema_id, country))
                 break
 
     # ponytail: exact name match only; players outside the RCR ranking (inactive/new) or with
     # different spelling/accents won't be found. Link them to a Player with ema_id instead.
-    result = {key: ids.pop() for key, ids in found.items() if len(ids) == 1}
-    cache.set("ema_ids_by_name", result, 60 * 60 * 24)
+    result = {key: entries.pop() for key, entries in found.items() if len(entries) == 1}
+    cache.set("ema_players_by_name", result, 60 * 60 * 24)
     return result
 
 

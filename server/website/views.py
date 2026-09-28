@@ -28,7 +28,7 @@ from austria_ranking.models import (
     QualificationModeInfo,
     QuotaEvent,
 )
-from austria_ranking.scraper import ema_ids_by_name
+from austria_ranking.scraper import ema_players_by_name
 from club.models import Club
 from news.models import NewsArticle
 from player.models import Player, PlayerQuotaEvent
@@ -587,6 +587,7 @@ def export_tournament_results(request, tournament_id):
         ema_id = ""
         country_code = ""
         is_ema_member = ""
+        ema_country = ""
 
         if player:
             first_name = player.first_name
@@ -603,15 +604,16 @@ def export_tournament_results(request, tournament_id):
                 if len(parts) > 1:
                     first_name = parts[1]
                 if ema_lookup is None:
-                    ema_lookup = ema_ids_by_name()  # fetched once, only if there are unlinked players
-                ema_id = ema_lookup.get((last_name, first_name.upper()), "")
-                swapped_ema_id = ema_lookup.get((first_name.upper(), last_name), "")
-                if not ema_id and swapped_ema_id:
+                    ema_lookup = ema_players_by_name()  # fetched once, only if there are unlinked players
+                ema_id, ema_country = ema_lookup.get((last_name, first_name.upper()), ("", ""))
+                swapped = ema_lookup.get((first_name.upper(), last_name))
+                if not ema_id and swapped:
                     # stored in the other order; the EMA ranking tells us which part is the surname
-                    ema_id = swapped_ema_id
+                    ema_id, ema_country = swapped
                     first_name, last_name = last_name.title(), first_name.upper()
                 is_ema_member = "YES" if ema_id else ""
-            country_code = result.country and result.country.code or ""
+            # a country set on the result wins; otherwise take it from the EMA ranking
+            country_code = result.country and result.country.code or ema_country
 
         rows.append(
             [
