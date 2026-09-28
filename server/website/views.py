@@ -605,6 +605,11 @@ def export_tournament_results(request, tournament_id):
                 if ema_lookup is None:
                     ema_lookup = ema_ids_by_name()  # fetched once, only if there are unlinked players
                 ema_id = ema_lookup.get((last_name, first_name.upper()), "")
+                swapped_ema_id = ema_lookup.get((first_name.upper(), last_name), "")
+                if not ema_id and swapped_ema_id:
+                    # stored in the other order; the EMA ranking tells us which part is the surname
+                    ema_id = swapped_ema_id
+                    first_name, last_name = last_name.title(), first_name.upper()
                 is_ema_member = "YES" if ema_id else ""
             country_code = result.country and result.country.code or ""
 

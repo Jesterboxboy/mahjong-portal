@@ -27,7 +27,7 @@ from tournament.models import (
     TournamentRegistration,
     TournamentResult,
 )
-from utils.new_pantheon import get_rating_table
+from utils.new_pantheon import get_rating_table, pantheon_title_to_last_first
 
 
 def _confirm_bulk_email(modeladmin, request, queryset, email_type, action_name, audience):
@@ -268,7 +268,7 @@ def load_pantheon_results(modeladmin, request, queryset):
                 place=place,
                 defaults={
                     "player": player,
-                    "player_string": title if player is None else "",
+                    "player_string": pantheon_title_to_last_first(title) if player is None else "",
                     "scores": scores,
                     "games": games,
                 },

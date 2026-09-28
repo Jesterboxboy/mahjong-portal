@@ -18,6 +18,14 @@ from settings.models import pantheon_admin_id, pantheon_admin_token
 logger = logging.getLogger()
 
 
+def pantheon_title_to_last_first(title):
+    """Pantheon titles are "First Last"; TournamentResult.player_string is stored as "Last First"."""
+    # ponytail: assumes the surname is the last word; "Anna van Berg" -> "Berg Anna van".
+    # The EMA export swaps back if only the other order matches the EMA ranking; linking the player is exact.
+    parts = (title or "").strip().rsplit(" ", 1)
+    return " ".join(reversed(parts))
+
+
 def get_new_pantheon_swiss_sortition(pantheonEventId, adminPersonId):
     client = MimirClient(settings.PANTHEON_NEW_API_URL)
 
