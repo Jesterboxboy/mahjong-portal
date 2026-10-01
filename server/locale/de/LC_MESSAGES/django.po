@@ -2308,7 +2308,7 @@ msgstr "Anzahl der Hanchans"
 
 #: tournament/models.py:528
 msgid "Entry fee"
-msgstr "Startgebühr"
+msgstr "Unkostenbeitrag"
 
 #: tournament/models.py:528
 msgid "Leave empty if it is free tournament"
@@ -2590,7 +2590,7 @@ msgstr "Die Anmeldung ist nicht geöffnet"
 
 #: tournament/models.py:115
 msgid "Track which registrants have paid the entry fee"
-msgstr "Erfassen, welche Teilnehmer die Startgebühr bezahlt haben"
+msgstr "Erfassen, welche Teilnehmer den Unkostenbeitrag bezahlt haben"
 
 #: templates/tournament/announcement.html tournament/models.py
 msgid "Paid"
@@ -2622,7 +2622,7 @@ msgstr "Klub"
 
 #: tournament/models.py
 msgid "Entry fee amount"
-msgstr "Startgebühr (Betrag)"
+msgstr "Unkostenbeitrag (Betrag)"
 
 #: tournament/models.py
 msgid "In €, shown on the announcement page"
