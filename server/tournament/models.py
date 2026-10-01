@@ -114,6 +114,14 @@ class Tournament(BaseModel):
         verbose_name=_("Entry fee"),
         help_text=_("Track which registrants have paid the entry fee"),
     )
+    entry_fee_amount = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name=_("Entry fee amount"),
+        help_text=_("In €, shown on the announcement page"),
+    )
     show_online_rank = models.BooleanField(
         default=False,
         verbose_name=_("Show online rank"),

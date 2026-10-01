@@ -42,18 +42,14 @@ def tournament_list(request, tournament_type=None, year=None):
     except ValueError:
         selected_year = current_year
 
-    years = []
-    for x in range(10):
-        years.append(current_year - x)
-
-    tournaments = Tournament.objects.filter(end_date__year=selected_year)
-
     if tournament_type == "ema":
         tournament_types = [Tournament.EMA]
-        tournaments = tournaments.filter(tournament_type__in=tournament_types)
     else:
         tournament_types = [Tournament.EMA, Tournament.OTHER, Tournament.ONLINE]
-        tournaments = tournaments.filter(tournament_type__in=tournament_types)
+
+    tournaments = Tournament.objects.filter(tournament_type__in=tournament_types, is_upcoming=False)
+    years = [d.year for d in tournaments.dates("end_date", "year", order="DESC")][:10]
+    tournaments = tournaments.filter(end_date__year=selected_year)
 
     tournaments = tournaments.order_by("-end_date").prefetch_related("city").prefetch_related("country")
 
@@ -67,7 +63,6 @@ def tournament_list(request, tournament_type=None, year=None):
 
     current_tournaments = all_tournaments.filter(start_date__lte=current_date)
     upcoming_tournaments = all_tournaments.filter(start_date__gt=current_date)
-    tournaments = tournaments.filter(is_upcoming=False)
 
     return render(
         request,

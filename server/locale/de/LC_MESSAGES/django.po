@@ -2611,3 +2611,19 @@ msgstr "Warteliste"
 #: tournament/models.py
 msgid "Waitlist number"
 msgstr "Wartelistennummer"
+
+#: templates/tournament/announcement.html
+msgid "Location"
+msgstr "Ort"
+
+#: templates/tournament/announcement.html
+msgid "Club"
+msgstr "Klub"
+
+#: tournament/models.py
+msgid "Entry fee amount"
+msgstr "Startgebühr (Betrag)"
+
+#: tournament/models.py
+msgid "In €, shown on the announcement page"
+msgstr "In €, wird auf der Ankündigungsseite angezeigt"

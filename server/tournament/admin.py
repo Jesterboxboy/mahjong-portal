@@ -342,6 +342,7 @@ class TournamentAdmin(TranslationAdmin):
                     "opened_registration",
                     "registrations_pre_moderation",
                     "entry_fee",
+                    "entry_fee_amount",
                     "show_online_rank",
                     "is_apply_in_rating",
                     "is_command",
@@ -548,6 +549,8 @@ def create_tournament_from_application(modeladmin, request, queryset):
         contact_info_de=app.contact_info_de or derived_contact_de,
         contact_info_en=app.contact_info_en or None,
         number_of_sessions=app.number_of_games or 0,
+        number_of_players=app.max_number_of_participants or 0,
+        entry_fee_amount=app.entry_fee,
     )
     tournament.save()
 

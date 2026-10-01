@@ -15,21 +15,43 @@
 
         <h1>{{ tournament.name }}</h1>
 
-        {% if tournament.is_upcoming %}
-            <p>{% trans 'Will be held' %} {{ tournament.start_date }}</p>
-
-            {% if tournament.opened_registration %}
-                {# approved only: get_tournament_registrations already picks the right model #}
-                <p>{% trans 'Registered players' %} {{ tournament.get_tournament_registrations.count }}</p>
-                {% if full_approved_players_count > 0 %}
-                    <p>{% trans 'Approved players' %} {{ full_approved_players_count }}</p>
+        <table class="table table-sm table-borderless w-auto mb-0">
+            <tbody>
+            {% if tournament.is_upcoming %}
+                <tr><th scope="row">{% trans 'Will be held' %}</th><td>{{ tournament.start_date }}</td></tr>
+                {% if tournament.opened_registration %}
+                    {# approved only: get_tournament_registrations already picks the right model #}
+                    <tr><th scope="row">{% trans 'Registered players' %}</th><td>{{ tournament.get_tournament_registrations.count }}</td></tr>
+                    {% if full_approved_players_count > 0 %}
+                        <tr><th scope="row">{% trans 'Approved players' %}</th><td>{{ full_approved_players_count }}</td></tr>
+                    {% endif %}
                 {% endif %}
+                {% if tournament.number_of_players %}
+                    <tr><th scope="row">{% trans 'Max. players' %}</th><td>{{ tournament.number_of_players }}</td></tr>
+                {% endif %}
+            {% else %}
+                <tr><th scope="row">{% trans 'Held' %}</th><td>{{ tournament.end_date }}, <a href="{{ tournament.get_url }}">{% trans 'all results' %}</a></td></tr>
             {% endif %}
-        {% else %}
-            <p>{% trans 'Held' %} {{ tournament.end_date }}, <a href="{{ tournament.get_url }}">{% trans 'all results' %}</a></p>
-        {% endif %}
-
-        {% include 'tournament/_tournament_header.html' %}
+            {% if tournament.entry_fee_amount is not None %}
+                <tr><th scope="row">{% trans 'Entry fee' %}</th><td>{{ tournament.entry_fee_amount|floatformat:"-2" }} €</td></tr>
+            {% endif %}
+            <tr>
+                <th scope="row">{% trans 'Location' %}</th>
+                <td>
+                    {% if tournament.city %}<a href="{% url 'city_page' tournament.city.slug %}">{{ tournament.city.name }}</a>, {% endif %}{{ tournament.country.name }}{% if tournament.ema_id %}, EMA: <a href="http://mahjong-europe.org/ranking/Tournament/TR_RCR_{{ tournament.ema_id }}.html" target="_blank">{{ tournament.ema_id }}</a>{% endif %}
+                </td>
+            </tr>
+            {% with clubs=tournament.clubs.all %}
+                {% if clubs %}
+                    <tr>
+                        <th scope="row">{% if clubs|length > 1 %}{% trans 'Clubs' %}{% else %}{% trans 'Club' %}{% endif %}</th>
+                        <td>{% for club in clubs %}<a href="{% url 'club_details' club.slug %}">{{ club.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                    </tr>
+                {% endif %}
+            {% endwith %}
+            <tr><th scope="row">{% trans 'Rating' %}</th><td>{% include 'tournament/_tournament_rating_type.html' %}</td></tr>
+            </tbody>
+        </table>
 
         {# ── Tabs ───────────────────────────────────────────────────────── #}
         {% with has_info=tournament.general_information|default:tournament.venue_address|default:tournament.schedule|default:tournament.lunch_options|default:tournament.contact_info %}
