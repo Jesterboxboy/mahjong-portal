@@ -9,7 +9,7 @@ from django.test import TestCase, override_settings
 from account.models import User
 from settings.models import Country
 from tournament.forms import TournamentRegistrationForm
-from tournament.models import Tournament, TournamentRegistration
+from tournament.models import Tournament, TournamentApplication, TournamentRegistration
 from utils.general import split_name
 
 
@@ -201,18 +201,38 @@ class OfflinePantheonRegistrationTest(TestCase):
         unregister.assert_called_once_with(1, "42", 777)
         self.assertIsNone(registration.pantheon_synced_on)
 
-    def test_remove_approval_is_not_offered_to_view_only_staff(self):
+    def test_admin_actions_need_the_permission_for_what_they_write(self):
         from django.contrib import admin
         from django.contrib.auth.models import Permission
         from django.test import RequestFactory
 
+        def actions(model):
+            request = RequestFactory().get("/")
+            request.user = User.objects.get(pk=self.user.pk)  # fresh instance: permissions are cached
+            return admin.site._registry[model].get_actions(request)
+
         self.user.is_staff = True
         self.user.save()
-        self.user.user_permissions.add(Permission.objects.get(codename="view_tournamentregistration"))
-        request = RequestFactory().get("/")
-        request.user = User.objects.get(pk=self.user.pk)
+        tournament_models = [m for m in admin.site._registry if m._meta.app_label == "tournament"]
+        self.user.user_permissions.add(*Permission.objects.filter(codename__startswith="view_"))
+        for model in tournament_models:
+            self.assertEqual(actions(model), {}, model.__name__)
 
-        self.assertNotIn("remove_approval", admin.site._registry[TournamentRegistration].get_actions(request))
+        def grant(*codenames):
+            self.user.user_permissions.add(
+                *Permission.objects.filter(content_type__app_label="tournament", codename__in=codenames)
+            )
+
+        grant("change_tournamentregistration", "change_tournament", "change_tournamentapplication")
+        self.assertIn("remove_approval", actions(TournamentRegistration))
+        self.assertIn("send_registrant_email", actions(Tournament))
+        # these two write another model, so changing the page's own model is not enough
+        self.assertNotIn("load_pantheon_results", actions(Tournament))
+        self.assertNotIn("create_tournament_from_application", actions(TournamentApplication))
+
+        grant("add_tournamentresult", "change_tournamentresult", "add_tournament")
+        self.assertIn("load_pantheon_results", actions(Tournament))
+        self.assertIn("create_tournament_from_application", actions(TournamentApplication))
 
     def test_remove_approval_without_pantheon_only_unapproves(self):
         self.tournament.is_pantheon_registration = False

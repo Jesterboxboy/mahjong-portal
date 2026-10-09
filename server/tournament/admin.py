@@ -77,6 +77,8 @@ def send_registrant_email(modeladmin, request, queryset):
 
 
 send_registrant_email.short_description = "Send bulk email to approved players"
+# without this Django offers an action to view-only staff as well
+send_registrant_email.allowed_permissions = ["change"]
 
 
 def send_email_to_all(modeladmin, request, queryset):
@@ -92,6 +94,7 @@ def send_email_to_all(modeladmin, request, queryset):
 
 
 send_email_to_all.short_description = "Send email to all registered players (incl. waitlist & unapproved)"
+send_email_to_all.allowed_permissions = ["change"]
 
 
 def send_unpaid_email(modeladmin, request, queryset):
@@ -121,6 +124,7 @@ def approve_and_send_confirmation(modeladmin, request, queryset):
 
 
 approve_and_send_confirmation.short_description = "Approve & send confirmation email"
+approve_and_send_confirmation.allowed_permissions = ["change"]
 
 
 def remove_approval(modeladmin, request, queryset):
@@ -151,7 +155,6 @@ def remove_approval(modeladmin, request, queryset):
 
 
 remove_approval.short_description = "Remove approval (keep registration, remove from Pantheon event)"
-# without this Django offers an action to view-only staff as well
 remove_approval.allowed_permissions = ["change"]
 
 
@@ -181,6 +184,7 @@ def retry_pantheon_registration(modeladmin, request, queryset):
 
 
 retry_pantheon_registration.short_description = "Retry Pantheon event registration"
+retry_pantheon_registration.allowed_permissions = ["change"]
 
 
 def mark_as_paid(modeladmin, request, queryset):
@@ -196,6 +200,7 @@ def mark_as_paid(modeladmin, request, queryset):
 
 
 mark_as_paid.short_description = "Player has paid (entry fee)"
+mark_as_paid.allowed_permissions = ["change"]
 
 
 def add_to_waitlist(modeladmin, request, queryset):
@@ -232,6 +237,7 @@ def add_to_waitlist(modeladmin, request, queryset):
 
 
 add_to_waitlist.short_description = "Add to waitlist..."
+add_to_waitlist.allowed_permissions = ["change"]
 
 
 def remove_from_waitlist(modeladmin, request, queryset):
@@ -241,6 +247,7 @@ def remove_from_waitlist(modeladmin, request, queryset):
 
 
 remove_from_waitlist.short_description = "Remove from waitlist..."
+remove_from_waitlist.allowed_permissions = ["change"]
 
 
 class TournamentEmailTemplateInline(admin.StackedInline):
@@ -336,6 +343,8 @@ def load_pantheon_results(modeladmin, request, queryset):
 
 
 load_pantheon_results.short_description = "Load Pantheon results"
+# writes TournamentResult rows, so the gate is on that model, not on the tournament
+load_pantheon_results.allowed_permissions = ["load_results"]
 
 
 class TournamentForm(forms.ModelForm):
@@ -422,6 +431,10 @@ class TournamentAdmin(TranslationAdmin):
         ),
         ("GDPR", {"fields": ["gdpr_document", "gdpr_file"]}),
     ]
+
+    def has_load_results_permission(self, request):
+        # update_or_create needs both
+        return request.user.has_perms(["tournament.add_tournamentresult", "tournament.change_tournamentresult"])
 
     def export(self, obj):
         return mark_safe(
@@ -612,11 +625,16 @@ def create_tournament_from_application(modeladmin, request, queryset):
 
 
 create_tournament_from_application.short_description = "Create Tournament from application"
+# creates a Tournament and leaves the application alone, so the gate is on adding tournaments
+create_tournament_from_application.allowed_permissions = ["create_tournament"]
 
 
 class TournamentApplicationAdmin(admin.ModelAdmin):
     list_display = ["tournament_name", "city", "start_date", "created_on"]
     actions = [create_tournament_from_application]
+
+    def has_create_tournament_permission(self, request):
+        return request.user.has_perm("tournament.add_tournament")
 
 
 class TournamentResultAdmin(admin.ModelAdmin):
