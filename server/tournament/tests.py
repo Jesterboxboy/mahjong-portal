@@ -547,7 +547,7 @@ class RegistrationNameLinkTest(TestCase):
 
 
 class EmailTypesTest(TestCase):
-    """Point 14: registrant = approved only, plus the waitlist and "to all" types."""
+    """Points 14 and 16: one audience per bulk type, and nothing is sent without the admin action."""
 
     def setUp(self):
         country = Country.objects.create(code="AT", name="Austria")
@@ -635,6 +635,24 @@ class EmailTypesTest(TestCase):
 
         self.assertIsNone(self._run_bulk_action(send_email_to_all, confirmed=True))
         self.assertEqual(self._recipients(), ["approved@example.com", "pending@example.com", "waiting@example.com"])
+
+    def test_unpaid_send_reaches_only_approved_players_who_have_not_paid(self):
+        from tournament.admin import send_unpaid_email
+        from tournament.models import TournamentEmailTemplate
+
+        self._registration("paid@example.com", is_approved=True, has_paid=True)
+        self._template(TournamentEmailTemplate.UNPAID)
+
+        self.assertIsNone(self._run_bulk_action(send_unpaid_email, confirmed=True))
+        self.assertEqual(self._recipients(), ["approved@example.com"])
+
+    def test_saving_a_template_sends_nothing(self):
+        from tournament.models import TournamentEmailTemplate
+
+        for email_type, _label in TournamentEmailTemplate.EMAIL_TYPES:
+            self._template(email_type).save()
+
+        self.assertEqual(mail.outbox, [])
 
     def test_adding_to_the_waitlist_emails_the_registrant(self):
         from unittest.mock import MagicMock

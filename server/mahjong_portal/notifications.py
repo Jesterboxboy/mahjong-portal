@@ -121,6 +121,9 @@ def bulk_email_recipients(tournament, email_type):
 
     if email_type == TournamentEmailTemplate.ALL:
         registrations = tournament.all_registrations()
+    elif email_type == TournamentEmailTemplate.UNPAID:
+        # has_paid lives on offline registrations only, so an online tournament has no unpaid audience
+        registrations = tournament.tournament_registrations.filter(is_approved=True, has_paid=False)
     else:
         # get_tournament_registrations() filters is_approved=True, so pending and
         # waitlisted registrants are never in the registrant audience.

@@ -611,15 +611,25 @@ class TournamentEmailTemplate(BaseModel):
     REGISTRANT = "registrant"
     WAITLIST = "waitlist"
     ALL = "all"
+    UNPAID = "unpaid"
     EMAIL_TYPES = [
         (CONFIRMATION, _("Confirmation email (sent when a registration is approved)")),
         (REGISTRANT, _("Registrant email (bulk send to approved players only)")),
         (WAITLIST, _("Waitlist email (sent when a registration is put on the waitlist)")),
         (ALL, _("Email to all (bulk send to approved, waitlist and unapproved players)")),
+        (UNPAID, _("Unpaid email (bulk send to approved players who have not paid)")),
     ]
 
     tournament = models.ForeignKey(Tournament, related_name="email_templates", on_delete=models.CASCADE)
-    email_type = models.CharField(max_length=20, choices=EMAIL_TYPES, verbose_name=_("Email type"))
+    email_type = models.CharField(
+        max_length=20,
+        choices=EMAIL_TYPES,
+        verbose_name=_("Email type"),
+        help_text=_(
+            "Saving a template never sends anything. Bulk types are sent from the tournament list: "
+            "tick the tournament, then pick the matching action."
+        ),
+    )
     subject = models.CharField(max_length=255, verbose_name=_("Subject"))
     body = models.TextField(
         verbose_name=_("Body"),

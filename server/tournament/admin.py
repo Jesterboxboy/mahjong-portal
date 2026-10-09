@@ -94,6 +94,22 @@ def send_email_to_all(modeladmin, request, queryset):
 send_email_to_all.short_description = "Send email to all registered players (incl. waitlist & unapproved)"
 
 
+def send_unpaid_email(modeladmin, request, queryset):
+    """Send each selected tournament's "unpaid" template to its approved players who have not paid."""
+    return _confirm_bulk_email(
+        modeladmin,
+        request,
+        queryset,
+        TournamentEmailTemplate.UNPAID,
+        "send_unpaid_email",
+        "approved players who have not paid",
+    )
+
+
+send_unpaid_email.short_description = "Send email to approved players who have not paid"
+send_unpaid_email.allowed_permissions = ["change"]
+
+
 def approve_and_send_confirmation(modeladmin, request, queryset):
     """Approve the selected registrations (triggers the confirmation email on save)."""
     count = 0
@@ -346,7 +362,7 @@ class TournamentAdmin(TranslationAdmin):
     ordering = ["-end_date"]
 
     filter_horizontal = ["clubs", "non_playing_organizers"]
-    actions = [load_pantheon_results, send_registrant_email, send_email_to_all]
+    actions = [load_pantheon_results, send_registrant_email, send_email_to_all, send_unpaid_email]
     inlines = [TournamentEmailTemplateInline]
 
     fieldsets = [
