@@ -126,6 +126,25 @@ def register_player(adminPersonId, pantheonEventId, pantheonId):
     )
 
 
+def unregister_player(adminPersonId, pantheonEventId, pantheonId):
+    client = MimirClient(settings.PANTHEON_NEW_API_URL)
+
+    context = Context()
+    # todo pass pantheon event's owner token
+    context.set_header("X-Auth-Token", pantheon_admin_token())
+    context.set_header("X-Current-Event-Id", str(pantheonEventId))
+    context.set_header("X-Current-Person-Id", str(adminPersonId))
+
+    return client.UnregisterPlayer(
+        ctx=context,
+        request=pantheon_api.mimir_pb2.EventsUnregisterPlayerPayload(
+            event_id=int(pantheonEventId), player_id=int(pantheonId)
+        ),
+        server_path_prefix="/v2",
+        timeout=30,
+    )
+
+
 def sync_registration_to_pantheon(registration) -> bool:
     """Enroll an approved offline+pantheon registrant in the linked Pantheon event.
 
@@ -159,6 +178,46 @@ def sync_registration_to_pantheon(registration) -> bool:
 
     _store_pantheon_sync_state(registration, pantheon_synced_on=timezone.now(), pantheon_sync_error="")
     return True
+
+
+def remove_registration_from_pantheon(registration) -> str:
+    """Take a registrant out of the linked Pantheon event; the reverse of sync_registration_to_pantheon().
+
+    Returns "" only when there is no Pantheon event this registration could be in, or when
+    Mimir took the removal; else the reason. Never raises. Fails closed: whatever the portal
+    cannot remove or check itself is a failure, never a silent skip.
+    """
+    tournament = registration.tournament
+    event_id = tournament.new_pantheon_id
+    uses_pantheon = tournament.is_pantheon_registration and not tournament.is_online() and event_id
+
+    if not uses_pantheon and not registration.pantheon_synced_on:
+        return ""
+
+    person_id = registration.user and registration.user.new_pantheon_id
+    if not event_id or not person_id:
+        # the player may still sit in the event (enrolled earlier, or by an organizer by hand)
+        return (
+            "No Pantheon event or Pantheon account is linked, so the portal cannot remove the player. "
+            "Remove them in Pantheon, then untick the approval in the registration itself"
+        )
+
+    if not pantheon_admin_id():
+        return "Frey connector / PANTHEON_ADMIN_ID is not configured"
+
+    try:
+        # also tried for a row the portal did not enroll, to catch a player an organizer enrolled by
+        # hand. Mimir answers success=False (no error) only for a player who is not in the event,
+        # which is the state wanted here, so the response value is deliberately not checked.
+        unregister_player(pantheon_admin_id(), tournament.new_pantheon_id, person_id)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Pantheon unregistration failed for registration %s", registration.pk)
+        # twirp reports every server-side refusal as "internal error"; the real reason is in meta
+        return (getattr(e, "meta", None) or {}).get("cause") or str(e) or repr(e)
+
+    # cleared so that approving again enrolls the player again
+    _store_pantheon_sync_state(registration, pantheon_synced_on=None, pantheon_sync_error="")
+    return ""
 
 
 def _pantheon_sync_failed(registration, reason) -> bool:

@@ -134,6 +134,97 @@ class OfflinePantheonRegistrationTest(TestCase):
 
         self.assertIn(registration.email, self._recipients())
 
+    def _approved(self):
+        registration = self._registration()
+        registration.is_approved = True
+        registration.save()
+        return registration
+
+    @staticmethod
+    def _remove_approval(registration):
+        from unittest.mock import MagicMock
+
+        from tournament.admin import remove_approval
+
+        modeladmin = MagicMock()
+        remove_approval(modeladmin, None, TournamentRegistration.objects.filter(pk=registration.pk))
+        # a fresh instance: the approval hook compares against the state the row was loaded with
+        return TournamentRegistration.objects.get(pk=registration.pk), modeladmin
+
+    def test_remove_approval_keeps_the_row_and_leaves_the_pantheon_event(self):
+        with patch("utils.new_pantheon.register_player") as register:
+            registration = self._approved()
+
+            with patch("utils.new_pantheon.unregister_player") as unregister:
+                registration, _ = self._remove_approval(registration)
+            unregister.assert_called_once_with(1, "42", 777)
+            self.assertFalse(registration.is_approved)
+            self.assertIsNone(registration.pantheon_synced_on)
+
+            # approving again has to enroll the player again
+            registration.is_approved = True
+            registration.save()
+            self.assertEqual(register.call_count, 2)
+
+    def test_remove_approval_stays_approved_when_pantheon_removal_fails(self):
+        with patch("utils.new_pantheon.register_player"):
+            registration = self._approved()
+
+        with patch("utils.new_pantheon.unregister_player", side_effect=RuntimeError("pantheon is down")):
+            registration, modeladmin = self._remove_approval(registration)
+
+        self.assertTrue(registration.is_approved)
+        self.assertIsNotNone(registration.pantheon_synced_on)
+        self.assertIn("pantheon is down", modeladmin.message_user.call_args.args[1])
+
+    def test_remove_approval_fails_closed_without_a_pantheon_account(self):
+        """Nobody to unregister by id, yet an organizer may have enrolled the player by hand."""
+        self.user.new_pantheon_id = None
+        self.user.save()
+        registration = self._approved()  # the push fails: no account
+
+        with patch("utils.new_pantheon.unregister_player") as unregister:
+            registration, modeladmin = self._remove_approval(registration)
+
+        unregister.assert_not_called()
+        self.assertTrue(registration.is_approved)
+        self.assertIn("cannot remove the player", modeladmin.message_user.call_args.args[1])
+
+    def test_remove_approval_also_cleans_up_a_row_unticked_by_hand(self):
+        with patch("utils.new_pantheon.register_player"):
+            registration = self._approved()
+        TournamentRegistration.objects.filter(pk=registration.pk).update(is_approved=False)
+
+        with patch("utils.new_pantheon.unregister_player") as unregister:
+            registration, _ = self._remove_approval(registration)
+
+        unregister.assert_called_once_with(1, "42", 777)
+        self.assertIsNone(registration.pantheon_synced_on)
+
+    def test_remove_approval_is_not_offered_to_view_only_staff(self):
+        from django.contrib import admin
+        from django.contrib.auth.models import Permission
+        from django.test import RequestFactory
+
+        self.user.is_staff = True
+        self.user.save()
+        self.user.user_permissions.add(Permission.objects.get(codename="view_tournamentregistration"))
+        request = RequestFactory().get("/")
+        request.user = User.objects.get(pk=self.user.pk)
+
+        self.assertNotIn("remove_approval", admin.site._registry[TournamentRegistration].get_actions(request))
+
+    def test_remove_approval_without_pantheon_only_unapproves(self):
+        self.tournament.is_pantheon_registration = False
+        self.tournament.save()
+        registration = self._approved()
+
+        with patch("utils.new_pantheon.unregister_player") as unregister:
+            registration, _ = self._remove_approval(registration)
+
+        unregister.assert_not_called()
+        self.assertFalse(registration.is_approved)
+
     def test_attached_player_wins_over_name_matching(self):
         """A Pantheon title with a middle name defeats find_player_smart; the account link must win."""
         from player.models import Player

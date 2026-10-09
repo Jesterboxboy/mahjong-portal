@@ -5,7 +5,7 @@ from datetime import date, datetime
 from django import forms
 from django.contrib import admin, messages
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
@@ -27,7 +27,7 @@ from tournament.models import (
     TournamentRegistration,
     TournamentResult,
 )
-from utils.new_pantheon import get_rating_table, pantheon_title_to_last_first
+from utils.new_pantheon import get_rating_table, pantheon_title_to_last_first, remove_registration_from_pantheon
 
 
 def _confirm_bulk_email(modeladmin, request, queryset, email_type, action_name, audience):
@@ -105,6 +105,38 @@ def approve_and_send_confirmation(modeladmin, request, queryset):
 
 
 approve_and_send_confirmation.short_description = "Approve & send confirmation email"
+
+
+def remove_approval(modeladmin, request, queryset):
+    """Un-approve the selected registrations (the rows stay) and take them out of the linked Pantheon event.
+
+    A row whose Pantheon removal fails stays approved, so the portal never lists a player
+    as out while the event still seats them. Running the action again retries it. A row that
+    was unticked by hand but is still enrolled in Pantheon is picked up too.
+    """
+    removed = 0
+    failures = []
+    for registration in queryset.filter(Q(is_approved=True) | Q(pantheon_synced_on__isnull=False)):
+        reason = remove_registration_from_pantheon(registration)
+        if reason:
+            failures.append(f"{registration.full_name}: {reason}")
+            continue
+        registration.is_approved = False
+        registration.save()
+        removed += 1
+
+    modeladmin.message_user(request, f"Removed approval from {removed} registration(s).", level=messages.SUCCESS)
+    if failures:
+        modeladmin.message_user(
+            request,
+            f"Left unchanged, Pantheon removal failed for {len(failures)}: " + "; ".join(failures),
+            level=messages.ERROR,
+        )
+
+
+remove_approval.short_description = "Remove approval (keep registration, remove from Pantheon event)"
+# without this Django offers an action to view-only staff as well
+remove_approval.allowed_permissions = ["change"]
 
 
 def retry_pantheon_registration(modeladmin, request, queryset):
@@ -410,6 +442,7 @@ class TournamentRegistrationAdmin(admin.ModelAdmin):
     readonly_fields = ["created_on"]
     actions = [
         approve_and_send_confirmation,
+        remove_approval,
         retry_pantheon_registration,
         mark_as_paid,
         add_to_waitlist,
