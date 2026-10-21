@@ -135,26 +135,13 @@
     </div>
 </main>
 
-<footer class="d-print-none footer mt-auto pt-5 pb-3 border-top">
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-lg-4 col-md-12">
-                <p class="small text-muted mb-2">
-                    Österreichischer Riichi Mahjong Verband
-                </p>
-            </div>
-            <div class="col-lg-2 col-md-3 col-6">
-                <ul class="list-unstyled mb-0 small">
-                    <li class="mb-1"><a href="{% url 'contacts' %}" class="text-muted text-decoration-none">{% trans "Contacts" %}</a></li>
-                    <li class="mb-1"><a href="{% url 'privacy' %}" class="text-muted text-decoration-none">{% trans "Privacy policy" %}</a></li>
-                </ul>
-            </div>
-            <div class="col-lg-2 col-md-3 col-6">
-                <p class="small text-muted mb-2">
-                Based on <a href="https://github.com/MahjongRepository/mahjong-portal" target="_blank" rel="noopener" class="text-muted me-3"> Mahjong-portal </a>
-                </p>
-            </div>
-        </div>
+<footer class="d-print-none footer mt-auto">
+    <div class="container d-flex flex-column flex-md-row justify-content-between gap-2 py-3">
+        <p class="mb-0">© {% now "Y" %} Österreichischer Riichi Mahjong Verband. Based on <a href="https://github.com/MahjongRepository/mahjong-portal" target="_blank" rel="noopener">Mahjong-portal</a>.</p>
+        <ul class="list-unstyled d-flex flex-wrap gap-3 mb-0">
+            <li><a href="{% url 'about' %}#impressum">{% trans "Legal notice" %}</a></li>
+            <li><a href="{% url 'privacy' %}">{% trans "Privacy policy" %}</a></li>
+        </ul>
     </div>
 </footer>
 

@@ -821,9 +821,13 @@ msgstr "Sonstiges"
 msgid "Contacts"
 msgstr "Kontakt"
 
-#: templates/base.html:149
+#: templates/base.html
 msgid "Privacy policy"
 msgstr "Datenschutz"
+
+#: templates/base.html
+msgid "Legal notice"
+msgstr "Impressum"
 
 #: templates/base.html:116 templates/tournament/application.html:5
 #: templates/tournament/application.html:10
