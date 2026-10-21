@@ -11,8 +11,6 @@
     {% if registration_item.player %}
         {{ registration_item.player.first_name }} {{ registration_item.player.last_name|slice:":1" }}.
     {% else %}
-        {% with parts=registration_item.full_name.split %}
-            {{ parts.0 }}{% if parts|length > 1 %} {{ parts|last|slice:":1" }}.{% endif %}
-        {% endwith %}
+        {{ registration_item.first_name }}{% if registration_item.last_name %} {{ registration_item.last_name|slice:":1" }}.{% endif %}
     {% endif %}
 {% endif %}

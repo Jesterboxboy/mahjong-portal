@@ -98,7 +98,6 @@ The following table maps system features to their respective configuration keys.
 
 | Service | Setting Key | Purpose |
 | :--- | :--- | :--- |
-| **Sentry** | `SENTRY_DSN` | Error tracking and performance monitoring [server/mahjong_portal/settings.py:13-20](). |
 | **Pantheon (Old API)** | `PANTHEON_OLD_API_URL` | JSON-RPC calls for player enrollment and sortition [server/utils/pantheon.py:36](). |
 | **Pantheon Auth** | `PANTHEON_ADMIN_TOKEN` | Bearer token for administrative Pantheon actions [server/utils/pantheon.py:19](). |
 | **Mahjong Soul** | `MS_USERNAME`, `MS_PASSWORD` | Credentials for the bot to scrape player statistics [.envs/.production.env.example:23-25](). |

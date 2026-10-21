@@ -50,7 +50,9 @@ class TournamentRegistrationForm(forms.ModelForm):
 
         tournament = kwargs.get("initial", {}).get("tournament")
 
-        self.fields["allow_to_save_data"].label = _("I allow to store my personal data")
+        self.fields["allow_to_save_data"].label = _(
+            "I accept the terms and conditions and have read the data protection information"
+        )
         _use_country_dropdown(self)
         if tournament.display_notes:
             self.fields["notes"].widget = forms.Textarea(attrs={"rows": 2})
@@ -82,7 +84,9 @@ class OnlineTournamentRegistrationForm(forms.ModelForm):
 
         tournament = kwargs.get("initial", {}).get("tournament")
 
-        self.fields["allow_to_save_data"].label = _("I allow to store my personal data")
+        self.fields["allow_to_save_data"].label = _(
+            "I accept the terms and conditions and have read the data protection information"
+        )
         _use_country_dropdown(self)
 
         if tournament.display_notes:
@@ -157,7 +161,9 @@ class TournamentApplicationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["allow_to_save_data"].label = _("I allow to store my personal data")
+        self.fields["allow_to_save_data"].label = _(
+            "I accept the terms and conditions and have read the data protection information"
+        )
         self.fields["is_admin_myself"].label = _(
             "I am the organiser, I need to grant access to manage the tournament on portal"
         )

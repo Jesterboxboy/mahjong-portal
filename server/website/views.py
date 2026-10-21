@@ -85,6 +85,14 @@ def about(request):
     return render(request, "website/{}".format(template), {"page": "about"})
 
 
+def privacy(request):
+    template = "privacy_en.html"
+    if get_language() == "de":
+        template = "privacy_de.html"
+
+    return render(request, "website/{}".format(template), {"page": "privacy"})
+
+
 def _annotate_used_foreign(rankings, period):
     """Attach used_foreign_pks (set of top-3 foreign EmaTournamentResult PKs) to each ranking."""
     if not period:

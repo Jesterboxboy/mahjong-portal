@@ -10,15 +10,6 @@ if platform.python_implementation() == "PyPy":
 
     compat.register()
 
-if os.environ.get("SENTRY_DSN"):
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
-
-    sentry_sdk.init(
-        dsn=os.environ.get("SENTRY_DSN"),
-        integrations=[DjangoIntegration()],
-    )
-
 SCHEME = "https"
 
 AUTH_USER_MODEL = "account.User"

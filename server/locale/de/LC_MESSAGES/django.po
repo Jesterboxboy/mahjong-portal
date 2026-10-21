@@ -821,6 +821,10 @@ msgstr "Sonstiges"
 msgid "Contacts"
 msgstr "Kontakt"
 
+#: templates/base.html:149
+msgid "Privacy policy"
+msgstr "Datenschutz"
+
 #: templates/base.html:116 templates/tournament/application.html:5
 #: templates/tournament/application.html:10
 #: templates/tournament/application.html:106
@@ -2169,6 +2173,10 @@ msgstr "Anzahl der Spiele"
 #: tournament/models.py:544
 msgid "I allow to store my personal data"
 msgstr "Ich willige in die Speicherung meiner persönlichen Daten ein"
+
+#: tournament/forms.py:54 tournament/forms.py:88 tournament/forms.py:165
+msgid "I accept the terms and conditions and have read the data protection information"
+msgstr "Ich akzeptiere die Teilnahmebedingungen und habe die Datenschutzinformationen gelesen"
 
 #: tournament/forms.py:30 tournament/forms.py:73 tournament/forms.py:99
 msgid "Team name"

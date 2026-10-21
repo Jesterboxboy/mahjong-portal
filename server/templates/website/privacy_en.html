@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Privacy policy{% endblock %}
+
+{% block meta_tags %}
+    <meta name="description" content="Privacy policy of the Austrian Riichi Mahjong Association.">
+    <meta property="og:description" content="Privacy policy of the Austrian Riichi Mahjong Association.">
+{% endblock %}
+
+{% block content %}
+    <div class="py-3">
+        <h1 class="mb-4">Privacy policy</h1>
+
+        <section class="mb-5">
+            <h2>Controller</h2>
+            <p>
+                Österreichischer Riichi Mahjong Verband (Austrian Riichi Mahjong Association), ZVR 063370256, seat in Vienna, Austria<br>
+                Email: <a href="mailto:vorstand@riichimahjong.at">vorstand@riichimahjong.at</a>
+            </p>
+        </section>
+
+        <section class="mb-5">
+            <h2>What data we process</h2>
+            <dl>
+                <dt>Visiting the website</dt>
+                <dd>The server logs IP address, time, requested page and browser identifier to run and secure the website (legitimate interest, Art. 6(1)(f) GDPR). The logs are rotated automatically and overwritten continuously.</dd>
+
+                <dt>Cookies</dt>
+                <dd>We only set technically necessary cookies (login, language setting, form protection). There are no analytics, tracking or advertising cookies.</dd>
+
+                <dt>User account</dt>
+                <dd>Email address, name and password (never stored in plain text) to provide the account (Art. 6(1)(b) GDPR), until the account is deleted.</dd>
+
+                <dt>Tournament registration</dt>
+                <dd>Name, country, city, email address and optionally phone number and EMA ID to run the tournament (Art. 6(1)(b) GDPR). The public participant list shows first name, first letter of the last name and country; logged-in users with a player profile see the full name, and all logged-in users see the payment status for tournaments with an entry fee. Details are in the terms and conditions linked on each tournament page.</dd>
+
+                <dt>Results, rankings and player profiles</dt>
+                <dd>Name, country, city, tournament results and ratings, for online tournaments also player names and public statistics from Tenhou and Mahjong Soul. We publish them as part of the tournament and ranking history (legitimate interest, Art. 6(1)(f) GDPR).</dd>
+
+                <dt>Tournament photos</dt>
+                <dd>We publish photos from tournaments without names (legitimate interest, Art. 6(1)(f) GDPR).</dd>
+
+                <dt>Association members</dt>
+                <dd>Name and membership fees for managing the association (Art. 6(1)(b) and (c) GDPR), as long as statutory retention obligations apply.</dd>
+            </dl>
+        </section>
+
+        <section class="mb-5">
+            <h2>Recipients</h2>
+            <ul>
+                <li>Hetzner Online GmbH (Germany) hosts the website (processor).</li>
+                <li>gdsolutions e.U. operates the Pantheon scoring system and email delivery on our behalf (processor).</li>
+                <li>For EMA-rated tournaments we send name, country, EMA ID and result to the European Mahjong Association, which publishes them on <a href="http://mahjong-europe.org" target="_blank" rel="noopener">mahjong-europe.org</a>.</li>
+            </ul>
+        </section>
+
+        <section class="mb-5">
+            <h2>Your rights</h2>
+            <p>You have the right of access, rectification, erasure, restriction of processing, data portability and objection. If you object to publication, we anonymise your entries or take your photos down. Write to <a href="mailto:vorstand@riichimahjong.at">vorstand@riichimahjong.at</a>.</p>
+            <p>You can also lodge a complaint with the Austrian Data Protection Authority: <a href="https://www.dsb.gv.at" target="_blank" rel="noopener">www.dsb.gv.at</a>.</p>
+        </section>
+    </div>
+{% endblock %}

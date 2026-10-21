@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}Datenschutz{% endblock %}
+
+{% block meta_tags %}
+    <meta name="description" content="Datenschutzerklärung des Österreichischen Riichi Mahjong Verbands.">
+    <meta property="og:description" content="Datenschutzerklärung des Österreichischen Riichi Mahjong Verbands.">
+{% endblock %}
+
+{% block content %}
+    <div class="py-3">
+        <h1 class="mb-4">Datenschutzerklärung</h1>
+
+        <section class="mb-5">
+            <h2>Verantwortlicher</h2>
+            <p>
+                Österreichischer Riichi Mahjong Verband, ZVR-Zahl 063370256, Sitz Wien<br>
+                E-Mail: <a href="mailto:vorstand@riichimahjong.at">vorstand@riichimahjong.at</a>
+            </p>
+        </section>
+
+        <section class="mb-5">
+            <h2>Welche Daten wir verarbeiten</h2>
+            <dl>
+                <dt>Besuch der Website</dt>
+                <dd>Der Server protokolliert IP-Adresse, Zeitpunkt, aufgerufene Seite und Browserkennung, um die Website zu betreiben und abzusichern (berechtigtes Interesse, Art. 6 Abs. 1 lit. f DSGVO). Die Protokolle werden automatisch rotiert und laufend überschrieben.</dd>
+
+                <dt>Cookies</dt>
+                <dd>Wir setzen nur technisch notwendige Cookies (Anmeldung, Spracheinstellung, Schutz von Formularen). Es gibt keine Analyse-, Tracking- oder Werbe-Cookies.</dd>
+
+                <dt>Benutzerkonto</dt>
+                <dd>E-Mail-Adresse, Name und Passwort (nie im Klartext gespeichert) zur Bereitstellung des Kontos (Art. 6 Abs. 1 lit. b DSGVO), bis das Konto gelöscht wird.</dd>
+
+                <dt>Turnieranmeldung</dt>
+                <dd>Name, Land, Stadt, E-Mail-Adresse sowie optional Telefonnummer und EMA-ID zur Durchführung des Turniers (Art. 6 Abs. 1 lit. b DSGVO). In der öffentlichen Teilnehmerliste erscheinen Vorname, Anfangsbuchstabe des Nachnamens und Land; angemeldete Benutzer mit Spielerprofil sehen den vollständigen Namen, alle angemeldeten Benutzer sehen bei Turnieren mit Startgeld den Zahlungsstatus. Details stehen in den Teilnahmebedingungen, die bei jedem Turnier verlinkt sind.</dd>
+
+                <dt>Ergebnisse, Ranglisten und Spielerprofile</dt>
+                <dd>Name, Land, Stadt, Turnierergebnisse und Ratings, bei Online-Turnieren auch Spielernamen und öffentliche Statistiken von Tenhou und Mahjong Soul. Wir veröffentlichen sie als Teil der Turnier- und Ranglistengeschichte (berechtigtes Interesse, Art. 6 Abs. 1 lit. f DSGVO).</dd>
+
+                <dt>Fotos von Turnieren</dt>
+                <dd>Wir veröffentlichen Fotos von Turnieren ohne Namensnennung (berechtigtes Interesse, Art. 6 Abs. 1 lit. f DSGVO).</dd>
+
+                <dt>Vereinsmitglieder</dt>
+                <dd>Name und Mitgliedsbeiträge zur Vereinsverwaltung (Art. 6 Abs. 1 lit. b und c DSGVO), solange gesetzliche Aufbewahrungspflichten bestehen.</dd>
+            </dl>
+        </section>
+
+        <section class="mb-5">
+            <h2>Empfänger</h2>
+            <ul>
+                <li>Hetzner Online GmbH (Deutschland) hostet die Website (Auftragsverarbeiter).</li>
+                <li>gdsolutions e.U. betreibt in unserem Auftrag das Wertungssystem Pantheon und den E-Mail-Versand (Auftragsverarbeiter).</li>
+                <li>Bei EMA-gewerteten Turnieren übermitteln wir Name, Land, EMA-ID und Ergebnis an die European Mahjong Association, die sie auf <a href="http://mahjong-europe.org" target="_blank" rel="noopener">mahjong-europe.org</a> veröffentlicht.</li>
+            </ul>
+        </section>
+
+        <section class="mb-5">
+            <h2>Ihre Rechte</h2>
+            <p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Widersprechen Sie der Veröffentlichung, anonymisieren wir Ihre Einträge oder nehmen Ihre Fotos offline. Schreiben Sie dazu an <a href="mailto:vorstand@riichimahjong.at">vorstand@riichimahjong.at</a>.</p>
+            <p>Sie können sich außerdem bei der Österreichischen Datenschutzbehörde beschweren: <a href="https://www.dsb.gv.at" target="_blank" rel="noopener">www.dsb.gv.at</a>.</p>
+        </section>
+    </div>
+{% endblock %}

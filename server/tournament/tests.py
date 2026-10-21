@@ -301,10 +301,14 @@ class EntryFeeTest(TestCase):
         self.assertTrue(paid.has_paid)
         self.assertFalse(free.has_paid)
 
-    def test_paid_column_only_with_entry_fee(self):
+    def test_paid_column_only_with_entry_fee_and_for_logged_in_users(self):
         self._registration(self.paid_cup, has_paid=True)
         self._registration(self.free_cup, has_paid=True)
 
+        # payment status is not public
+        self.assertNotIn('class="text-success"', self.client.get(self.paid_cup.get_url()).content.decode())
+
+        self.client.force_login(User.objects.create_user(username="m@example.com", email="m@example.com"))
         with_fee = self.client.get(self.paid_cup.get_url()).content.decode()
         without_fee = self.client.get(self.free_cup.get_url()).content.decode()
 
@@ -363,7 +367,9 @@ class PendingRegistrationsCountTest(TestCase):
         self._registration(is_approved=False)
         url = self.tournament.get_url().replace("/de/", "/en/", 1)
 
-        self.assertIn("Registered players 1", self.client.get(url).content.decode())
+        self.assertIn(
+            '<th scope="row">Registered players</th><td>1</td>', self.client.get(url).content.decode()
+        )
 
     def test_alert_shown_only_with_pre_moderation(self):
         self._registration(is_approved=False)
@@ -439,12 +445,12 @@ class WaitlistTest(TestCase):
             is_upcoming=True,
         )
 
-    def _registration(self, last_name="Müller", **kwargs):
+    def _registration(self, first_name="Hans", **kwargs):
         kwargs.setdefault("is_approved", False)
         return TournamentRegistration.objects.create(
             tournament=self.tournament,
-            first_name="Hans",
-            last_name=last_name,
+            first_name=first_name,
+            last_name="Müller",
             city="Wien",
             registration_country="Austria",
             email="h@example.com",
@@ -564,6 +570,19 @@ class RegistrationNameLinkTest(TestCase):
         # full_name is "last first" for both the player and the registration — unchanged, just unlinked
         self.assertEqual(pane.count("Müller Hans"), 2)
         self.assertNotIn(self.player.slug, pane)
+
+    def test_anonymous_sees_first_name_and_last_initial(self):
+        self._registration(is_approved=True)
+        TournamentRegistration.objects.create(
+            tournament=self.tournament, first_name="Anna", last_name="Berger", city="Wien", email="a@example.com"
+        )
+
+        pane = self.client.get(self.tournament.get_url()).content.decode().split('id="registration-pane"')[1]
+
+        self.assertIn("Hans M.", pane)
+        self.assertIn("Anna B.", pane)
+        self.assertNotIn("Müller", pane)
+        self.assertNotIn("Berger", pane)
 
 
 class EmailTypesTest(TestCase):
