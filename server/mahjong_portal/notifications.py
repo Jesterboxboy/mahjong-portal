@@ -74,7 +74,8 @@ def notify_pantheon_sync_failure(registration, reason):
         f"{name!r} was approved for {tournament.name!r} but could NOT be added to the "
         f"linked Pantheon event (id {tournament.new_pantheon_id}).\n\n"
         f"Reason: {reason}\n\n"
-        f"The portal registration was kept. Please add the player in Pantheon manually, "
+        f"The portal registration was kept and the registrant still gets the confirmation email. "
+        f"Please add the player in Pantheon manually, "
         f"or retry from the admin.\n\n"
         f"Registration: {_admin_url(registration)}"
     )

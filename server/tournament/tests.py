@@ -97,7 +97,7 @@ class OfflinePantheonRegistrationTest(TestCase):
     def _recipients(self):
         return [address for message in mail.outbox for address in message.to]
 
-    def test_failed_push_emails_only_the_admins(self):
+    def test_failed_push_emails_the_admins_and_still_confirms_the_registrant(self):
         self._confirmation_template()
         registration = self._registration()
 
@@ -105,7 +105,7 @@ class OfflinePantheonRegistrationTest(TestCase):
             registration.is_approved = True
             registration.save()
 
-        self.assertEqual(self._recipients(), ["organizer@example.com"])
+        self.assertEqual(sorted(self._recipients()), ["organizer@example.com", registration.email])
 
     def test_successful_push_emails_the_registrant(self):
         self._confirmation_template()
@@ -117,7 +117,7 @@ class OfflinePantheonRegistrationTest(TestCase):
 
         self.assertIn(registration.email, self._recipients())
 
-    def test_retry_action_sends_the_withheld_confirmation(self):
+    def test_retry_action_does_not_confirm_twice(self):
         from unittest.mock import MagicMock
 
         from tournament.admin import retry_pantheon_registration
@@ -132,7 +132,9 @@ class OfflinePantheonRegistrationTest(TestCase):
         with patch("utils.new_pantheon.register_player"):
             retry_pantheon_registration(MagicMock(), None, TournamentRegistration.objects.all())
 
-        self.assertIn(registration.email, self._recipients())
+        registration.refresh_from_db()
+        self.assertIsNotNone(registration.pantheon_synced_on)
+        self.assertEqual(self._recipients(), [])
 
     def _approved(self):
         registration = self._registration()

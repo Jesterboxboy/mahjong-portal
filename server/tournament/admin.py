@@ -162,9 +162,9 @@ def retry_pantheon_registration(modeladmin, request, queryset):
     """Re-attempt the Pantheon event enrollment for the selected registrations.
 
     Needed because re-saving an already approved registration does not re-fire the
-    approval hook, so there is no other retry path after a Pantheon outage.
+    approval hook, so there is no other retry path after a Pantheon outage. Sends no email:
+    the registrant was confirmed at approval, whether the push worked or not.
     """
-    from mahjong_portal.notifications import confirmation_email
     from utils.new_pantheon import sync_registration_to_pantheon
 
     succeeded = 0
@@ -172,8 +172,6 @@ def retry_pantheon_registration(modeladmin, request, queryset):
     for registration in queryset:
         if sync_registration_to_pantheon(registration):
             succeeded += 1
-            # the approval mail was withheld while the push was failing
-            confirmation_email(registration)
         else:
             failed += 1
     modeladmin.message_user(

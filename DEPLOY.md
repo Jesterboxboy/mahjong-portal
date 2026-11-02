@@ -337,8 +337,8 @@ docker compose exec web sh -c 'echo $PANTHEON_ADMIN_ID; echo ${PANTHEON_ADMIN_CO
 
 ### When a push fails
 
-The portal registration is always kept. The error is stored on the registration
-(`pantheon_sync_error`) and organizers + superusers are emailed. After fixing the cause, select the
+The portal registration is always kept and the registrant still gets the confirmation email. The
+error is stored on the registration (`pantheon_sync_error`) and organizers + superusers are emailed. After fixing the cause, select the
 affected rows in **Admin → Tournament registrations** and run **Retry Pantheon event registration**.
 
 ---

@@ -416,17 +416,12 @@ class RegistrationConfirmationMixin(models.Model):
         if self.is_approved and (is_new or not self._original_is_approved):
             from mahjong_portal.notifications import confirmation_email
 
-            # hook first: a failed external enrollment must not tell the registrant they are in
-            if self.on_became_approved():
-                confirmation_email(self)
+            self.on_became_approved()
+            confirmation_email(self)
         self._original_is_approved = self.is_approved
 
     def on_became_approved(self):
-        """Hook: fires once when a registration transitions to approved.
-
-        Returns whether the registrant should be sent the confirmation email.
-        """
-        return True
+        """Hook: fires once when a registration transitions to approved, before the confirmation email."""
 
     def get_recipient_email(self):
         """Best-effort email for the registrant; None if unavailable."""
@@ -512,10 +507,8 @@ class TournamentRegistration(RegistrationConfirmationMixin, BaseModel):
             type(self).objects.filter(pk=self.pk).update(waitlist_number=None)
             self.waitlist_number = None
 
+        # a failed push emails the admins; the registrant is confirmed regardless
         sync_registration_to_pantheon(self)
-        # only the admins hear about a failed push; the registrant is told once it works
-        # (admin action "Retry Pantheon event registration" sends the confirmation then)
-        return not self.pantheon_sync_error
 
 
 class OnlineTournamentRegistration(RegistrationConfirmationMixin, BaseModel):
